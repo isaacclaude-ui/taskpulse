@@ -183,6 +183,29 @@ export interface DashboardData {
   members: Member[];
 }
 
+// Announcement
+export interface Announcement {
+  id: string;
+  team_id: string;
+  content: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  member?: Member;
+}
+
+// Shared Link
+export interface SharedLink {
+  id: string;
+  team_id: string;
+  title: string;
+  description?: string;
+  url: string;
+  created_by: string;
+  created_at: string;
+  member?: Member;
+}
+
 // Navigation context
 export interface NavContext {
   businessId: string | null;

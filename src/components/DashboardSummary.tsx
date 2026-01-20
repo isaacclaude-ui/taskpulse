@@ -75,93 +75,118 @@ export default function DashboardSummary({ tasks, members }: DashboardSummaryPro
 
   return (
     <div className="mb-6 space-y-4">
-      {/* 1. Pipeline Progress Cards - with NOW waiting on info */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {pipelineProgress.map(pipeline => (
-          <div
-            key={pipeline.id}
-            className="bg-white rounded-lg border border-gray-200 p-3"
-          >
-            {/* Title + percentage */}
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-gray-900 truncate flex-1" title={pipeline.title}>
-                {pipeline.title}
-              </h3>
-              <span className="text-xs ml-2">
-                <span className="font-bold text-teal-600">{pipeline.percent}%</span>
-                <span className="text-gray-400 ml-1">({pipeline.completed}/{pipeline.total})</span>
-              </span>
-            </div>
+      {/* 1. Pipeline Progress Cards - Premium Design */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-teal-800 via-teal-700 to-emerald-800 p-5 shadow-xl">
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-400/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
 
-            {/* Segmented progress bar */}
-            <div className="flex items-center gap-0.5 mb-2">
-              {Array.from({ length: pipeline.total }).map((_, i) => {
-                const isCompleted = i < pipeline.completed;
-                const isCurrent = i === pipeline.completed;
-                return (
-                  <div
-                    key={i}
-                    className={`h-1.5 flex-1 rounded-full ${
-                      isCompleted
-                        ? 'bg-emerald-500'
-                        : isCurrent
-                        ? 'bg-amber-400'
-                        : 'bg-gray-200'
-                    }`}
-                  />
-                );
-              })}
+        {/* Header */}
+        <div className="relative flex items-center justify-between mb-5">
+          <div className="flex items-center gap-4">
+            {/* Pipeline count - prominent */}
+            <div className="bg-white/15 backdrop-blur-sm px-5 py-2 rounded-xl border border-white/20">
+              <span className="text-3xl font-bold text-white">{tasks.length}</span>
+              <span className="text-sm text-teal-100 ml-2">pipeline{tasks.length !== 1 ? 's' : ''}</span>
             </div>
-
-            {/* Current step info - NOW waiting on format */}
-            <div className="text-xs">
-              {pipeline.currentStep ? (
-                <span className="inline-flex items-center gap-1">
-                  <span className="text-amber-600 font-medium">NOW</span>
-                  <span className="text-gray-400">—</span>
-                  {pipeline.currentAssignee && (
-                    <span className="text-amber-700 font-semibold">{getFirstName(pipeline.currentAssignee)}</span>
-                  )}
-                  {pipeline.currentAssignee && <span className="text-gray-400"> → </span>}
-                  <span className="text-gray-600">{pipeline.currentStep}</span>
-                </span>
-              ) : (
-                <span className="text-emerald-600">All steps complete</span>
-              )}
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse shadow-lg shadow-emerald-400/50"></div>
+              <span className="text-base font-semibold text-white uppercase tracking-wide">Active</span>
+              <span className="text-sm text-teal-200">— waiting on</span>
             </div>
           </div>
-        ))}
+        </div>
+
+        {/* Pipeline Cards */}
+        <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {pipelineProgress.map(pipeline => (
+            <div
+              key={pipeline.id}
+              className="group bg-white rounded-xl p-4 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+            >
+              {/* Title + percentage */}
+              <div className="flex items-start justify-between mb-3">
+                <h3 className="text-base font-bold text-slate-800 leading-tight pr-2" title={pipeline.title}>
+                  {pipeline.title}
+                </h3>
+                <div className="flex flex-col items-end flex-shrink-0">
+                  <span className="text-2xl font-bold text-teal-600">{pipeline.percent}%</span>
+                  <span className="text-xs text-slate-400">({pipeline.completed}/{pipeline.total})</span>
+                </div>
+              </div>
+
+              {/* Segmented progress bar */}
+              <div className="flex items-center gap-1 mb-3">
+                {Array.from({ length: pipeline.total }).map((_, i) => {
+                  const isCompleted = i < pipeline.completed;
+                  const isCurrent = i === pipeline.completed;
+                  return (
+                    <div
+                      key={i}
+                      className={`h-2 flex-1 rounded-full transition-all ${
+                        isCompleted
+                          ? 'bg-gradient-to-r from-emerald-400 to-emerald-500 shadow-sm'
+                          : isCurrent
+                          ? 'bg-gradient-to-r from-amber-400 to-orange-400 shadow-sm animate-pulse'
+                          : 'bg-slate-200'
+                      }`}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Current step info */}
+              <div className="flex items-center gap-2 text-sm bg-teal-50 rounded-lg px-3 py-2">
+                {pipeline.currentStep ? (
+                  <>
+                    {pipeline.currentAssignee && (
+                      <span className="font-semibold text-teal-700 bg-teal-100 px-2 py-0.5 rounded">
+                        {getFirstName(pipeline.currentAssignee)}
+                      </span>
+                    )}
+                    <svg className="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                    <span className="text-teal-700 truncate">{pipeline.currentStep}</span>
+                  </>
+                ) : (
+                  <span className="text-emerald-600 font-medium">All steps complete</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* 2. Team Member Cards - Individual stats */}
+      {/* 2. Team Member Cards - with explicit labels */}
       {memberStats.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+        <div className="flex flex-wrap gap-2">
           {memberStats.map(stat => {
             const isUrgent = stat.now > 0;
             return (
               <div
                 key={stat.id}
-                className={`rounded-lg p-2.5 ${
+                className={`rounded-lg p-2.5 w-[calc(50%-4px)] sm:w-[calc(33.333%-6px)] md:w-[calc(25%-6px)] lg:w-[140px] transition-all ${
                   isUrgent
-                    ? 'bg-amber-50 border border-amber-200'
-                    : 'bg-gray-50 border border-gray-200'
+                    ? 'bg-orange-100 border-2 border-orange-400 shadow-sm'
+                    : 'bg-white border border-slate-200'
                 }`}
               >
-                <div className="font-medium text-gray-900 text-sm truncate mb-1.5" title={stat.name}>
+                <div className="font-medium text-slate-800 text-sm truncate mb-1.5" title={stat.name}>
                   {getFirstName(stat.name)}
                 </div>
-                <div className="flex items-center gap-2 text-xs">
-                  <div className="flex items-center gap-1" title="Done">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    <span className="font-semibold text-emerald-700">{stat.done}</span>
+                <div className="flex flex-col gap-0.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Now</span>
+                    <span className={`font-semibold ${isUrgent ? 'text-orange-600' : 'text-slate-400'}`}>{stat.now}</span>
                   </div>
-                  <div className="flex items-center gap-1" title="Now">
-                    <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                    <span className={`font-semibold ${isUrgent ? 'text-amber-700' : 'text-gray-400'}`}>{stat.now}</span>
-                  </div>
-                  <div className="flex items-center gap-1" title="Coming Soon">
-                    <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Next</span>
                     <span className="font-semibold text-blue-600">{stat.comingSoon}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Done</span>
+                    <span className="font-semibold text-emerald-600">{stat.done}</span>
                   </div>
                 </div>
               </div>

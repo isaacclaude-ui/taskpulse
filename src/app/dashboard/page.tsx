@@ -7,9 +7,9 @@ import { useNav } from '@/context/NavContext';
 import PipelineGrid from '@/components/PipelineGrid';
 import StepDetailModal from '@/components/StepDetailModal';
 import TaskEditModal from '@/components/TaskEditModal';
-import NotificationBell from '@/components/NotificationBell';
 import DashboardSummary from '@/components/DashboardSummary';
-import type { TaskWithSteps, Member, Team } from '@/types';
+import Footer from '@/components/Footer';
+import type { TaskWithSteps, Member, Team, Announcement, SharedLink } from '@/types';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -28,6 +28,11 @@ export default function DashboardPage() {
   // Task edit modal state
   const [editingTask, setEditingTask] = useState<TaskWithSteps | null>(null);
 
+  // Announcements and Shared Links state
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [sharedLinks, setSharedLinks] = useState<SharedLink[]>([]);
+  const [showAllAnnouncements, setShowAllAnnouncements] = useState(false);
+
   useEffect(() => {
     async function checkAuth() {
       const user = await getCurrentUser();
@@ -41,6 +46,8 @@ export default function DashboardPage() {
       }
       loadDashboard();
       loadAvailableTeams();
+      loadAnnouncements();
+      loadSharedLinks();
     }
     checkAuth();
   }, [router, teamId, member]);
@@ -55,6 +62,32 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error('Failed to load teams:', error);
+    }
+  };
+
+  const loadAnnouncements = async () => {
+    if (!teamId) return;
+    try {
+      const res = await fetch(`/api/announcements?teamId=${teamId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setAnnouncements(data.announcements || []);
+      }
+    } catch (error) {
+      console.error('Failed to load announcements:', error);
+    }
+  };
+
+  const loadSharedLinks = async () => {
+    if (!teamId) return;
+    try {
+      const res = await fetch(`/api/shared-links?teamId=${teamId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSharedLinks(data.links || []);
+      }
+    } catch (error) {
+      console.error('Failed to load shared links:', error);
     }
   };
 
@@ -214,46 +247,75 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="glass-bg min-h-screen">
+    <div className="glass-bg min-h-screen flex flex-col">
       {/* Header */}
       <header className="header-banner">
         <div className="header-banner-content px-4 py-6">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-white">Task Pulse</h1>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-teal-100 text-sm">{business?.name}</span>
-                <span className="text-teal-300">•</span>
-                <span className="text-white text-sm font-medium">{team?.name}</span>
+            <div className="flex items-center gap-3">
+              {/* Futuristic Icon */}
+              <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-white">Task Pulse</h1>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-teal-100 text-sm">{business?.name}</span>
+                  <span className="text-teal-300">•</span>
+                  <span className="text-white text-sm font-medium">{team?.name}</span>
+                </div>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Notification bell */}
-              {member && <NotificationBell memberId={member.id} />}
+              {/* User email */}
+              {member && (
+                <span className="text-sm text-white/60 hidden sm:block">{member.email}</span>
+              )}
 
+              {/* Admin button with gear icon */}
+              {member?.role === 'admin' && (
+                <button
+                  onClick={() => router.push('/admin')}
+                  className="flex items-center gap-2 text-sm bg-white/10 text-white py-2 px-4 rounded-lg hover:bg-white/20 transition-colors font-medium"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span className="hidden sm:inline">Admin</span>
+                </button>
+              )}
+
+              {/* Notifications button */}
+              {member && (
+                <button
+                  onClick={() => router.push('/notifications')}
+                  className="flex items-center gap-2 text-sm bg-white/10 text-white py-2 px-4 rounded-lg hover:bg-white/20 transition-colors font-medium"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                  <span className="hidden sm:inline">Notifications</span>
+                </button>
+              )}
+
+              {/* Log Entry button - white */}
               <button
                 onClick={() => router.push('/add-log')}
-                className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                className="flex items-center gap-2 text-sm bg-white text-teal-700 py-2 px-4 rounded-lg hover:bg-white/90 transition-colors font-medium"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                Add Log
+                <span className="hidden sm:inline">Log Entry</span>
               </button>
 
-              {member?.role === 'admin' && (
-                <button
-                  onClick={() => router.push('/admin')}
-                  className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-sm transition-colors"
-                >
-                  Admin
-                </button>
-              )}
-
+              {/* User dropdown with team switch and logout */}
               <div className="relative group">
-                <button className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2">
-                  <span>{member?.name}</span>
+                <button className="flex items-center gap-2 text-sm text-white/70 py-2 px-3 rounded-lg hover:bg-white/10 transition-colors">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -262,7 +324,7 @@ export default function DashboardPage() {
                   {/* Team switcher section */}
                   {availableTeams.length > 1 && (
                     <>
-                      <div className="px-4 py-1 text-xs text-gray-400 uppercase tracking-wide">Teams</div>
+                      <div className="px-4 py-1 text-xs text-gray-400 uppercase tracking-wide">Switch Team</div>
                       {availableTeams.map((t) => (
                         <button
                           key={t.id}
@@ -286,8 +348,11 @@ export default function DashboardPage() {
                   )}
                   <button
                     onClick={handleLogout}
-                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 whitespace-nowrap"
+                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                   >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
                     Sign Out
                   </button>
                 </div>
@@ -296,6 +361,133 @@ export default function DashboardPage() {
           </div>
         </div>
       </header>
+
+      {/* Announcements & Shared Links Section */}
+      <div className="max-w-7xl mx-auto px-4 py-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ minHeight: '20vh' }}>
+          {/* Announcements - Left */}
+          <div className="glass-card rounded-xl p-4 flex flex-col">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide flex items-center gap-2">
+                <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                </svg>
+                Announcements
+              </h2>
+              {announcements.length > 3 && (
+                <button
+                  onClick={() => setShowAllAnnouncements(true)}
+                  className="text-xs text-teal-600 hover:text-teal-700 font-medium"
+                >
+                  View All ({announcements.length})
+                </button>
+              )}
+            </div>
+            <div className="flex-1 overflow-y-auto space-y-2">
+              {announcements.length === 0 ? (
+                <p className="text-sm text-slate-400 text-center py-4">No announcements yet</p>
+              ) : (
+                announcements.slice(0, 3).map((announcement) => (
+                  <div key={announcement.id} className="bg-slate-50 rounded-lg p-3 border-l-3 border-teal-500">
+                    <p className="text-sm text-slate-700 whitespace-pre-wrap">{announcement.content}</p>
+                    <div className="flex items-center gap-2 mt-2 text-xs text-slate-400">
+                      <span>{(announcement.member as { name?: string })?.name || 'Unknown'}</span>
+                      <span>•</span>
+                      <span>{new Date(announcement.created_at).toLocaleDateString()}</span>
+                      {announcement.updated_at !== announcement.created_at && (
+                        <span className="text-slate-300">(edited)</span>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Shared Links - Right */}
+          <div className="glass-card rounded-xl p-4 flex flex-col">
+            <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide flex items-center gap-2 mb-3">
+              <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+              Shared Links
+            </h2>
+            <div className="flex-1 overflow-y-auto">
+              {sharedLinks.length === 0 ? (
+                <p className="text-sm text-slate-400 text-center py-4">No shared links yet</p>
+              ) : (
+                <table className="w-full text-sm">
+                  <tbody>
+                    {sharedLinks.map((link) => (
+                      <tr key={link.id} className="border-b border-slate-100 last:border-0">
+                        <td className="py-2 pr-2">
+                          <a
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-teal-600 hover:text-teal-700 hover:underline"
+                          >
+                            {link.title}
+                          </a>
+                          {link.description && (
+                            <p className="text-xs text-slate-400 mt-0.5">{link.description}</p>
+                          )}
+                        </td>
+                        <td className="py-2 text-right">
+                          <a
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-slate-400 hover:text-teal-600"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Announcements Modal */}
+      {showAllAnnouncements && (
+        <div className="modal-overlay" onClick={() => setShowAllAnnouncements(false)}>
+          <div className="modal-content p-6 max-w-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-slate-800">All Announcements</h2>
+              <button
+                onClick={() => setShowAllAnnouncements(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="max-h-96 overflow-y-auto space-y-3">
+              {announcements.map((announcement) => (
+                <div key={announcement.id} className="bg-slate-50 rounded-lg p-4 border-l-3 border-teal-500">
+                  <p className="text-sm text-slate-700 whitespace-pre-wrap">{announcement.content}</p>
+                  <div className="flex items-center gap-2 mt-2 text-xs text-slate-400">
+                    <span>{(announcement.member as { name?: string })?.name || 'Unknown'}</span>
+                    <span>•</span>
+                    <span>{new Date(announcement.created_at).toLocaleDateString()} {new Date(announcement.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    {announcement.updated_at !== announcement.created_at && (
+                      <span className="text-slate-300">(edited)</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main content */}
       <main className="max-w-7xl mx-auto px-4 py-6">
@@ -323,10 +515,6 @@ export default function DashboardPage() {
           </button>
 
           <div className="flex-1" />
-
-          <span className="text-sm text-gray-500">
-            {tasks.length} pipeline{tasks.length !== 1 ? 's' : ''}
-          </span>
         </div>
 
         {/* Dashboard Summary - only show for active tasks */}
@@ -378,6 +566,9 @@ export default function DashboardPage() {
         teamId={teamId || ''}
         onTaskUpdated={loadDashboard}
       />
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

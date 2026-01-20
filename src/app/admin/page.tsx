@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import { useNav } from '@/context/NavContext';
-import type { Team, Member, PendingUser } from '@/types';
+import type { Team, Member, PendingUser, Announcement, SharedLink } from '@/types';
 
-type Tab = 'members' | 'teams' | 'pending' | 'emails' | 'settings';
+type Tab = 'members' | 'teams' | 'pending' | 'emails' | 'content' | 'settings';
 
 interface MemberWithTeams extends Member {
   teamIds: string[];
@@ -59,6 +59,17 @@ export default function AdminPage() {
   }
   const [emailMembers, setEmailMembers] = useState<EmailMember[]>([]);
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
+
+  // Content management (Announcements & Shared Links)
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [sharedLinks, setSharedLinks] = useState<SharedLink[]>([]);
+  const [newAnnouncementText, setNewAnnouncementText] = useState('');
+  const [editingAnnouncementId, setEditingAnnouncementId] = useState<string | null>(null);
+  const [editingAnnouncementText, setEditingAnnouncementText] = useState('');
+  const [newLinkTitle, setNewLinkTitle] = useState('');
+  const [newLinkDescription, setNewLinkDescription] = useState('');
+  const [newLinkUrl, setNewLinkUrl] = useState('');
+  const [selectedTeamForContent, setSelectedTeamForContent] = useState<string>('');
 
   useEffect(() => {
     async function checkAuth() {
@@ -352,6 +363,109 @@ export default function AdminPage() {
     setSendingEmail(null);
   };
 
+  // Content management handlers
+  const loadContent = async (teamId: string) => {
+    if (!teamId) return;
+    try {
+      const [announcementsRes, linksRes] = await Promise.all([
+        fetch(`/api/announcements?teamId=${teamId}`),
+        fetch(`/api/shared-links?teamId=${teamId}`),
+      ]);
+      const [announcementsData, linksData] = await Promise.all([
+        announcementsRes.json(),
+        linksRes.json(),
+      ]);
+      setAnnouncements(announcementsData.announcements || []);
+      setSharedLinks(linksData.links || []);
+    } catch (error) {
+      console.error('Failed to load content:', error);
+    }
+  };
+
+  const handleAddAnnouncement = async () => {
+    if (!selectedTeamForContent || !newAnnouncementText.trim() || !member) return;
+    try {
+      const res = await fetch('/api/announcements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          teamId: selectedTeamForContent,
+          content: newAnnouncementText.trim(),
+          memberId: member.id,
+        }),
+      });
+      if (res.ok) {
+        setNewAnnouncementText('');
+        loadContent(selectedTeamForContent);
+      }
+    } catch (error) {
+      console.error('Failed to add announcement:', error);
+    }
+  };
+
+  const handleUpdateAnnouncement = async (id: string) => {
+    if (!editingAnnouncementText.trim()) return;
+    try {
+      const res = await fetch(`/api/announcements/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: editingAnnouncementText.trim() }),
+      });
+      if (res.ok) {
+        setEditingAnnouncementId(null);
+        setEditingAnnouncementText('');
+        loadContent(selectedTeamForContent);
+      }
+    } catch (error) {
+      console.error('Failed to update announcement:', error);
+    }
+  };
+
+  const handleDeleteAnnouncement = async (id: string) => {
+    if (!confirm('Delete this announcement?')) return;
+    try {
+      await fetch(`/api/announcements/${id}`, { method: 'DELETE' });
+      loadContent(selectedTeamForContent);
+    } catch (error) {
+      console.error('Failed to delete announcement:', error);
+    }
+  };
+
+  const handleAddSharedLink = async () => {
+    if (!selectedTeamForContent || !newLinkTitle.trim() || !newLinkUrl.trim() || !member) return;
+    try {
+      const res = await fetch('/api/shared-links', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          teamId: selectedTeamForContent,
+          title: newLinkTitle.trim(),
+          description: newLinkDescription.trim() || null,
+          url: newLinkUrl.trim(),
+          memberId: member.id,
+        }),
+      });
+      if (res.ok) {
+        setNewLinkTitle('');
+        setNewLinkDescription('');
+        setNewLinkUrl('');
+        loadContent(selectedTeamForContent);
+      }
+    } catch (error) {
+      console.error('Failed to add shared link:', error);
+    }
+  };
+
+  const handleDeleteSharedLink = async (id: string) => {
+    if (!confirm('Delete this shared link?')) return;
+    try {
+      await fetch(`/api/shared-links/${id}`, { method: 'DELETE' });
+      loadContent(selectedTeamForContent);
+    } catch (error) {
+      console.error('Failed to delete shared link:', error);
+    }
+  };
+
   return (
     <div className="glass-bg min-h-screen">
       {/* Header */}
@@ -433,6 +547,25 @@ export default function AdminPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
             Emails
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab('content');
+              if (teams.length > 0 && !selectedTeamForContent) {
+                setSelectedTeamForContent(teams[0].id);
+                loadContent(teams[0].id);
+              }
+            }}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+              activeTab === 'content'
+                ? 'bg-teal-600 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+            </svg>
+            Content
           </button>
           <button
             onClick={() => setActiveTab('settings')}
@@ -799,7 +932,7 @@ export default function AdminPage() {
 
                 {emailMembers.length === 0 ? (
                   <p className="text-gray-500 text-center py-8">
-                    No team leads or admins with email found
+                    No members with email found
                   </p>
                 ) : (
                   <div className="overflow-x-auto">
@@ -823,9 +956,13 @@ export default function AdminPage() {
                             </td>
                             <td className="py-3 px-2">
                               <span className={`text-xs px-2 py-1 rounded-full ${
-                                m.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                                m.role === 'admin'
+                                  ? 'bg-purple-100 text-purple-700'
+                                  : m.role === 'lead'
+                                  ? 'bg-blue-100 text-blue-700'
+                                  : 'bg-gray-100 text-gray-700'
                               }`}>
-                                {m.role === 'admin' ? 'Admin' : 'Lead'}
+                                {m.role === 'admin' ? 'Admin' : m.role === 'lead' ? 'Lead' : 'Staff'}
                               </span>
                             </td>
                             <td className="py-3 px-2">
@@ -884,7 +1021,227 @@ export default function AdminPage() {
                     <li>• <strong>Monthly:</strong> Sent on the 1st of each month at 8 AM UTC</li>
                     <li>• <strong>None:</strong> No automatic emails</li>
                   </ul>
+                  <h3 className="text-sm font-medium text-gray-700 mt-4 mb-2">What Each Role Sees</h3>
+                  <ul className="text-xs text-gray-500 space-y-1">
+                    <li>• <strong>Admin:</strong> All pipelines across all teams</li>
+                    <li>• <strong>Lead:</strong> All pipelines in their assigned teams</li>
+                    <li>• <strong>Staff:</strong> Only pipelines where they have a step assigned</li>
+                  </ul>
                 </div>
+              </div>
+            )}
+
+            {/* Content Tab */}
+            {activeTab === 'content' && (
+              <div className="glass-card rounded-xl p-6">
+                <div className="mb-6">
+                  <h2 className="text-lg font-semibold text-gray-900">Dashboard Content</h2>
+                  <p className="text-sm text-gray-500">
+                    Manage announcements and shared links that appear on team dashboards.
+                  </p>
+                </div>
+
+                {/* Team Selector */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Select Team</label>
+                  <select
+                    value={selectedTeamForContent}
+                    onChange={(e) => {
+                      setSelectedTeamForContent(e.target.value);
+                      loadContent(e.target.value);
+                    }}
+                    className="input-field w-full max-w-xs"
+                  >
+                    <option value="">Choose a team...</option>
+                    {teams.map(t => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {selectedTeamForContent && (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Announcements Section */}
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                        </svg>
+                        Announcements
+                      </h3>
+
+                      {/* Add New Announcement */}
+                      <div className="mb-4">
+                        <textarea
+                          value={newAnnouncementText}
+                          onChange={(e) => setNewAnnouncementText(e.target.value)}
+                          placeholder="Write an announcement..."
+                          className="input-field w-full h-20 resize-none"
+                        />
+                        <button
+                          onClick={handleAddAnnouncement}
+                          disabled={!newAnnouncementText.trim()}
+                          className="btn-primary text-sm mt-2 disabled:opacity-50"
+                        >
+                          Post Announcement
+                        </button>
+                      </div>
+
+                      {/* Announcements List */}
+                      <div className="space-y-3 max-h-80 overflow-y-auto">
+                        {announcements.length === 0 ? (
+                          <p className="text-sm text-gray-500 italic">No announcements yet</p>
+                        ) : (
+                          announcements.map((a) => (
+                            <div key={a.id} className="bg-white rounded-lg p-3 border border-gray-200">
+                              {editingAnnouncementId === a.id ? (
+                                <div>
+                                  <textarea
+                                    value={editingAnnouncementText}
+                                    onChange={(e) => setEditingAnnouncementText(e.target.value)}
+                                    className="input-field w-full h-20 resize-none text-sm"
+                                  />
+                                  <div className="flex gap-2 mt-2">
+                                    <button
+                                      onClick={() => handleUpdateAnnouncement(a.id)}
+                                      className="btn-primary text-xs px-3 py-1"
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setEditingAnnouncementId(null);
+                                        setEditingAnnouncementText('');
+                                      }}
+                                      className="btn-secondary text-xs px-3 py-1"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{a.content}</p>
+                                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
+                                    <div className="text-xs text-gray-500">
+                                      {a.member?.name} • {new Date(a.created_at).toLocaleDateString()}
+                                      {a.updated_at !== a.created_at && ' (edited)'}
+                                    </div>
+                                    <div className="flex gap-1">
+                                      <button
+                                        onClick={() => {
+                                          setEditingAnnouncementId(a.id);
+                                          setEditingAnnouncementText(a.content);
+                                        }}
+                                        className="text-gray-400 hover:text-teal-600 p-1"
+                                        title="Edit"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                        </svg>
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteAnnouncement(a.id)}
+                                        className="text-gray-400 hover:text-red-600 p-1"
+                                        title="Delete"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Shared Links Section */}
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                        </svg>
+                        Shared Links
+                      </h3>
+
+                      {/* Add New Link */}
+                      <div className="mb-4 space-y-2">
+                        <input
+                          type="text"
+                          value={newLinkTitle}
+                          onChange={(e) => setNewLinkTitle(e.target.value)}
+                          placeholder="Link title (e.g., Staff Database)"
+                          className="input-field w-full text-sm"
+                        />
+                        <input
+                          type="text"
+                          value={newLinkDescription}
+                          onChange={(e) => setNewLinkDescription(e.target.value)}
+                          placeholder="Description (optional)"
+                          className="input-field w-full text-sm"
+                        />
+                        <input
+                          type="url"
+                          value={newLinkUrl}
+                          onChange={(e) => setNewLinkUrl(e.target.value)}
+                          placeholder="URL (e.g., https://example.com)"
+                          className="input-field w-full text-sm"
+                        />
+                        <button
+                          onClick={handleAddSharedLink}
+                          disabled={!newLinkTitle.trim() || !newLinkUrl.trim()}
+                          className="btn-primary text-sm disabled:opacity-50"
+                        >
+                          Add Link
+                        </button>
+                      </div>
+
+                      {/* Links List */}
+                      <div className="space-y-2 max-h-80 overflow-y-auto">
+                        {sharedLinks.length === 0 ? (
+                          <p className="text-sm text-gray-500 italic">No shared links yet</p>
+                        ) : (
+                          sharedLinks.map((link) => (
+                            <div key={link.id} className="bg-white rounded-lg p-3 border border-gray-200">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <a
+                                    href={link.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-medium text-teal-600 hover:text-teal-700 text-sm block truncate"
+                                  >
+                                    {link.title}
+                                  </a>
+                                  {link.description && (
+                                    <p className="text-xs text-gray-500 mt-0.5">{link.description}</p>
+                                  )}
+                                  <p className="text-xs text-gray-400 mt-1 truncate">{link.url}</p>
+                                </div>
+                                <button
+                                  onClick={() => handleDeleteSharedLink(link.id)}
+                                  className="text-gray-400 hover:text-red-600 p-1 flex-shrink-0"
+                                  title="Delete"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </div>
+                              <div className="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-100">
+                                Added by {link.member?.name} • {new Date(link.created_at).toLocaleDateString()}
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

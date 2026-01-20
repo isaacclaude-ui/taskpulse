@@ -41,8 +41,7 @@ export async function GET(request: NextRequest) {
           )
         `)
         .eq('business_id', businessId)
-        .not('email', 'is', null)
-        .in('role', ['admin', 'lead']); // Only admins and leads get email digests
+        .not('email', 'is', null); // All members with email can receive digests
 
       if (membersError) throw membersError;
 
