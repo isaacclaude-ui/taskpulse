@@ -8,6 +8,16 @@ import type { Team, Member, PendingUser, Announcement, SharedLink, CalendarEvent
 
 type Tab = 'members' | 'teams' | 'pending' | 'emails' | 'content' | 'settings';
 
+// Preset colors for calendar events
+const EVENT_COLORS = [
+  { name: 'Teal', value: '#0d9488' },
+  { name: 'Blue', value: '#2563eb' },
+  { name: 'Purple', value: '#7c3aed' },
+  { name: 'Pink', value: '#db2777' },
+  { name: 'Orange', value: '#ea580c' },
+  { name: 'Green', value: '#16a34a' },
+];
+
 interface MemberWithTeams extends Member {
   teamIds: string[];
 }
@@ -1430,15 +1440,24 @@ export default function AdminPage() {
                           placeholder="Event title"
                           className="input-field w-full text-sm"
                         />
-                        <div className="flex items-center gap-2">
-                          <label className="text-xs text-gray-500">Color:</label>
-                          <input
-                            type="color"
-                            value={newEventColor}
-                            onChange={(e) => setNewEventColor(e.target.value)}
-                            className="w-8 h-8 rounded cursor-pointer border border-gray-200"
-                          />
-                          <span className="text-xs text-gray-400">{newEventColor}</span>
+                        <div>
+                          <label className="text-xs text-gray-500 block mb-1">Color:</label>
+                          <div className="flex gap-1.5">
+                            {EVENT_COLORS.map((color) => (
+                              <button
+                                key={color.value}
+                                type="button"
+                                onClick={() => setNewEventColor(color.value)}
+                                className={`w-6 h-6 rounded-full transition-all ${
+                                  newEventColor === color.value
+                                    ? 'ring-2 ring-offset-1 ring-gray-400 scale-110'
+                                    : 'hover:scale-110'
+                                }`}
+                                style={{ backgroundColor: color.value }}
+                                title={color.name}
+                              />
+                            ))}
+                          </div>
                         </div>
                         <button
                           onClick={handleAddCalendarEvent}
@@ -1472,14 +1491,24 @@ export default function AdminPage() {
                                     className="input-field w-full text-sm"
                                     autoFocus
                                   />
-                                  <div className="flex items-center gap-2">
-                                    <label className="text-xs text-gray-500">Color:</label>
-                                    <input
-                                      type="color"
-                                      value={editingEventColor}
-                                      onChange={(e) => setEditingEventColor(e.target.value)}
-                                      className="w-6 h-6 rounded cursor-pointer border border-gray-200"
-                                    />
+                                  <div>
+                                    <label className="text-xs text-gray-500 block mb-1">Color:</label>
+                                    <div className="flex gap-1.5">
+                                      {EVENT_COLORS.map((color) => (
+                                        <button
+                                          key={color.value}
+                                          type="button"
+                                          onClick={() => setEditingEventColor(color.value)}
+                                          className={`w-5 h-5 rounded-full transition-all ${
+                                            editingEventColor === color.value
+                                              ? 'ring-2 ring-offset-1 ring-gray-400 scale-110'
+                                              : 'hover:scale-110'
+                                          }`}
+                                          style={{ backgroundColor: color.value }}
+                                          title={color.name}
+                                        />
+                                      ))}
+                                    </div>
                                   </div>
                                   <div className="flex gap-2">
                                     <button

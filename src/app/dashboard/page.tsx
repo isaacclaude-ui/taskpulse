@@ -495,6 +495,7 @@ export default function DashboardPage() {
                     loadCalendarEvents(newMonth);
                   }}
                   className="p-1 hover:bg-slate-100 rounded"
+                  title="Previous month"
                 >
                   <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -512,10 +513,23 @@ export default function DashboardPage() {
                     loadCalendarEvents(newMonth);
                   }}
                   className="p-1 hover:bg-slate-100 rounded"
+                  title="Next month"
                 >
                   <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
+                </button>
+                <button
+                  onClick={() => {
+                    const now = new Date();
+                    const todayMonth = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+                    setCalendarMonth(todayMonth);
+                    loadCalendarEvents(todayMonth);
+                  }}
+                  className="ml-1 px-2 py-0.5 text-xs text-teal-600 hover:bg-teal-50 rounded font-medium"
+                  title="Go to today"
+                >
+                  Today
                 </button>
               </div>
             </div>
@@ -540,7 +554,7 @@ export default function DashboardPage() {
                   const days = [];
                   // Empty cells for days before first of month
                   for (let i = 0; i < firstDay; i++) {
-                    days.push(<div key={`empty-${i}`} className="h-8" />);
+                    days.push(<div key={`empty-${i}`} className="min-h-[52px]" />);
                   }
                   // Days of the month
                   for (let day = 1; day <= daysInMonth; day++) {
@@ -553,23 +567,30 @@ export default function DashboardPage() {
                       <button
                         key={day}
                         onClick={() => setSelectedDate(isSelected ? null : dateStr)}
-                        className={`h-8 text-xs rounded flex flex-col items-center justify-start pt-0.5 transition-colors relative ${
+                        className={`min-h-[52px] text-xs rounded flex flex-col items-center pt-0.5 transition-colors overflow-hidden ${
                           isToday ? 'bg-teal-100 font-semibold text-teal-700' :
                           isSelected ? 'bg-slate-200' :
                           'hover:bg-slate-50'
                         }`}
                       >
-                        <span>{day}</span>
+                        <span className="text-[10px]">{day}</span>
                         {dayEvents.length > 0 && (
-                          <div className="absolute bottom-0.5 left-0 right-0 flex justify-center gap-0.5 overflow-hidden px-0.5">
-                            {dayEvents.slice(0, 3).map((event, idx) => (
+                          <div className="w-full px-0.5 mt-0.5 space-y-0.5 overflow-hidden">
+                            {dayEvents.slice(0, 2).map((event, idx) => (
                               <div
                                 key={idx}
-                                className="w-1 h-1 rounded-full flex-shrink-0"
-                                style={{ backgroundColor: event.color }}
+                                className="text-[8px] leading-tight truncate px-0.5 rounded"
+                                style={{ backgroundColor: event.color, color: 'white' }}
                                 title={event.title}
-                              />
+                              >
+                                {event.title}
+                              </div>
                             ))}
+                            {dayEvents.length > 2 && (
+                              <div className="text-[8px] text-slate-400 text-center">
+                                +{dayEvents.length - 2}
+                              </div>
+                            )}
                           </div>
                         )}
                       </button>
