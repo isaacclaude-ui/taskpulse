@@ -99,25 +99,23 @@ export default function DashboardSummary({ tasks, members }: DashboardSummaryPro
   const getFirstName = (name: string) => getDisplayName(name, allMemberNames);
 
   return (
-    <div className="mb-4 space-y-3">
+    <div className="mb-4 space-y-3 overflow-x-hidden">
       {/* 1. Pipeline Progress Cards - Compact Design */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-teal-800 via-teal-700 to-emerald-800 p-3 shadow-lg">
+      <div className="relative rounded-xl bg-gradient-to-br from-teal-800 via-teal-700 to-emerald-800 p-3 shadow-lg">
         {/* Decorative elements */}
         <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
 
         {/* Header */}
-        <div className="relative flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
-            {/* Pipeline count - compact */}
-            <div className="bg-white/15 backdrop-blur-sm px-3 py-1 rounded-lg border border-white/20">
-              <span className="text-xl font-bold text-white">{tasks.length}</span>
-              <span className="text-xs text-teal-100 ml-1">pipeline{tasks.length !== 1 ? 's' : ''}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-              <span className="text-sm font-semibold text-white uppercase tracking-wide">Active</span>
-              <span className="text-xs text-teal-200">— waiting on</span>
-            </div>
+        <div className="relative flex flex-wrap items-center gap-2 mb-3">
+          {/* Pipeline count - compact */}
+          <div className="bg-white/15 backdrop-blur-sm px-3 py-1 rounded-lg border border-white/20">
+            <span className="text-xl font-bold text-white">{tasks.length}</span>
+            <span className="text-xs text-teal-100 ml-1">pipeline{tasks.length !== 1 ? 's' : ''}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+            <span className="text-sm font-semibold text-white uppercase tracking-wide">Active</span>
+            <span className="text-xs text-teal-200 hidden sm:inline">— waiting on</span>
           </div>
         </div>
 
@@ -182,15 +180,15 @@ export default function DashboardSummary({ tasks, members }: DashboardSummaryPro
         </div>
       </div>
 
-      {/* 2. Team Member Cards - compact */}
+      {/* 2. Team Member Cards - horizontally scrollable on small screens */}
       {memberStats.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
           {memberStats.map(stat => {
             const isUrgent = stat.now > 0;
             return (
               <div
                 key={stat.id}
-                className={`rounded-md p-2 w-[calc(50%-3px)] sm:w-[calc(25%-4px)] md:w-[calc(16.666%-5px)] lg:w-[115px] transition-all ${
+                className={`rounded-md p-2 min-w-[100px] flex-shrink-0 transition-all ${
                   isUrgent
                     ? 'bg-green-100 border-2 border-green-400'
                     : 'bg-white border border-slate-200'
