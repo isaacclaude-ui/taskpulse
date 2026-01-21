@@ -350,7 +350,7 @@ export default function DashboardPage() {
                   {/* Team switcher section */}
                   {availableTeams.length > 0 && (
                     <>
-                      <div className="px-4 py-1 text-xs text-gray-400 uppercase tracking-wide">Switch Team ({availableTeams.length})</div>
+                      <div className="px-4 py-1 text-xs text-gray-400 uppercase tracking-wide">Switch Team</div>
                       {availableTeams.map((t) => (
                         <button
                           key={t.id}
