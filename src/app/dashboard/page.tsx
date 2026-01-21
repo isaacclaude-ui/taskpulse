@@ -343,7 +343,7 @@ export default function DashboardPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
-                <div className="absolute right-0 mt-2 min-w-48 max-w-64 bg-white rounded-lg shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                <div className="absolute right-0 mt-2 w-auto min-w-[200px] bg-white rounded-lg shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
                   {/* Team switcher section */}
                   {availableTeams.length > 1 && (
                     <>
@@ -352,13 +352,13 @@ export default function DashboardPage() {
                         <button
                           key={t.id}
                           onClick={() => handleTeamSwitch(t)}
-                          className={`w-full px-4 py-2 text-left text-sm flex items-center justify-between ${
+                          className={`w-full px-4 py-2 text-left text-sm flex items-center justify-between whitespace-nowrap ${
                             t.id === teamId
                               ? 'text-teal-600 bg-teal-50 font-medium'
                               : 'text-gray-700 hover:bg-gray-50'
                           }`}
                         >
-                          <span>{t.name}</span>
+                          <span className="pr-2">{t.name}</span>
                           {t.id === teamId && (
                             <svg className="w-4 h-4 text-teal-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
