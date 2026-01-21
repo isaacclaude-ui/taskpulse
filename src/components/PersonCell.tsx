@@ -82,9 +82,9 @@ export default function PersonCell({
     // Color scheme: Done=grey, Now=green, Coming Soon=blue
     // Non-active cards have extra padding to match active card height (which has buttons)
     const cardStyles = {
-      completed: 'bg-gray-100 border border-gray-300 pb-6',
-      active: 'bg-green-50 border border-green-400',
-      pending: 'bg-blue-50/50 border border-blue-200 opacity-70 pb-6',
+      completed: 'bg-gray-100 border border-gray-300 pb-8',
+      active: 'bg-green-50 border border-green-400 pb-2',
+      pending: 'bg-blue-50/50 border border-blue-200 opacity-70 pb-8',
     };
 
     const statusIcon = {
@@ -104,7 +104,7 @@ export default function PersonCell({
     return (
       <div
         key={step.id}
-        className={`rounded p-2 relative overflow-hidden ${cardStyles[status]} ${status !== 'pending' ? 'cursor-pointer' : ''}`}
+        className={`rounded p-3 relative overflow-hidden ${cardStyles[status]} ${status !== 'pending' ? 'cursor-pointer' : ''}`}
         onClick={status !== 'pending' ? () => onStepClick(step.id, taskId) : undefined}
       >
         {/* DONE watermark for completed steps */}
