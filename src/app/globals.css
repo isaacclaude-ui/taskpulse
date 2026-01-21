@@ -419,3 +419,23 @@ body {
   84% { width: 40px; right: 0; top: 26px; }
   100% { width: 35px; right: 6px; top: 28px; }
 }
+
+/* Loading Screen Animations */
+@keyframes loading-bar {
+  0% {
+    width: 0%;
+    margin-left: 0%;
+  }
+  50% {
+    width: 60%;
+    margin-left: 20%;
+  }
+  100% {
+    width: 0%;
+    margin-left: 100%;
+  }
+}
+
+.animate-loading-bar {
+  animation: loading-bar 1.5s ease-in-out infinite;
+}
