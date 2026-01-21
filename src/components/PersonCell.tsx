@@ -170,7 +170,7 @@ export default function PersonCell({
           <div className="flex gap-1 mt-2 pt-2 border-t border-green-100 relative">
             {!isFirst && !step.is_joint && (
               <button
-                className="flex-1 text-[10px] bg-red-500 text-white px-1.5 py-1 rounded hover:bg-red-600 font-medium"
+                className="flex-1 text-[10px] bg-red-500 text-white px-1.5 py-1 rounded font-medium transition-all duration-150 ease-out hover:bg-red-600 hover:scale-[1.03] active:scale-95"
                 onClick={(e) => {
                   e.stopPropagation();
                   onStepReturn(step.id);
@@ -180,7 +180,7 @@ export default function PersonCell({
               </button>
             )}
             <button
-              className="flex-1 text-[10px] bg-green-500 text-white px-1.5 py-1 rounded hover:bg-green-600 font-medium"
+              className="flex-1 text-[10px] bg-green-500 text-white px-1.5 py-1 rounded font-medium transition-all duration-150 ease-out hover:bg-green-600 hover:scale-[1.03] active:scale-95"
               onClick={(e) => {
                 e.stopPropagation();
                 onStepComplete(step.id);

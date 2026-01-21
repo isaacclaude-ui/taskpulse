@@ -148,14 +148,14 @@ body {
   color: #1e40af;
 }
 
-/* Button Styles - Futuristic */
+/* Button Styles - Subtle micro-interactions */
 .btn-primary {
   background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
   color: white;
   padding: 10px 20px;
   border-radius: 8px;
   font-weight: 500;
-  transition: all 0.2s;
+  transition: all 0.15s ease-out;
   position: relative;
   overflow: hidden;
 }
@@ -176,8 +176,13 @@ body {
 }
 
 .btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.4);
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
+}
+
+.btn-primary:active {
+  transform: scale(0.97);
+  box-shadow: 0 2px 4px rgba(13, 148, 136, 0.2);
 }
 
 .btn-primary:disabled {
@@ -193,13 +198,31 @@ body {
   border-radius: 8px;
   border: 1px solid #e5e7eb;
   font-weight: 500;
-  transition: all 0.2s;
+  transition: all 0.15s ease-out;
 }
 
 .btn-secondary:hover {
   background: #f9fafb;
   border-color: #0d9488;
   color: #0d9488;
+  transform: scale(1.02);
+}
+
+.btn-secondary:active {
+  transform: scale(0.97);
+}
+
+/* Clickable elements - subtle micro-interaction */
+.clickable {
+  transition: all 0.15s ease-out;
+}
+
+.clickable:hover {
+  transform: scale(1.01);
+}
+
+.clickable:active {
+  transform: scale(0.98);
 }
 
 /* Input Styles */
