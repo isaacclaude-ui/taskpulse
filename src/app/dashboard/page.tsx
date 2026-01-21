@@ -137,7 +137,7 @@ export default function DashboardPage() {
 
         // Add task deadlines and step mini-deadlines from loaded tasks
         tasks.forEach(task => {
-          // Task deadline
+          // Task deadline (pipeline deadline) - red
           if (task.deadline) {
             const deadlineDate = task.deadline.split('T')[0];
             if (deadlineDate.startsWith(targetMonth)) {
@@ -145,14 +145,14 @@ export default function DashboardPage() {
                 id: `task-${task.id}`,
                 event_date: deadlineDate,
                 title: `📋 ${truncateText(task.title, TASK_NAME_LIMIT + STEP_NAME_LIMIT + 3)}`, // Full width for task-only
-                color: '#f59e0b', // Amber for task deadlines
+                color: '#dc2626', // Red for pipeline deadlines
                 source: 'task',
                 task_id: task.id,
               });
             }
           }
 
-          // Step mini-deadlines
+          // Step mini-deadlines - faded red
           task.pipeline_steps?.forEach(step => {
             if (step.mini_deadline) {
               const stepDate = step.mini_deadline.split('T')[0];
@@ -163,7 +163,7 @@ export default function DashboardPage() {
                   id: `step-${step.id}`,
                   event_date: stepDate,
                   title: `📌 ${taskPart} - ${stepPart}`,
-                  color: '#8b5cf6', // Purple for step deadlines
+                  color: '#f87171', // Faded red for step deadlines
                   source: 'step',
                   task_id: task.id,
                   step_id: step.id,
