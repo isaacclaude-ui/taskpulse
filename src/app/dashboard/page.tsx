@@ -348,12 +348,12 @@ export default function DashboardPage() {
                   style={{ minWidth: '280px' }}
                 >
                   {/* Team switcher section */}
-                  {availableTeams.length > 0 && (
+                  {availableTeams.length > 0 ? (
                     <>
                       <div className="px-4 py-1 text-xs text-gray-400 uppercase tracking-wide">Switch Team</div>
-                      {availableTeams.map((t) => (
+                      {availableTeams.map((t, index) => (
                         <button
-                          key={t.id}
+                          key={t.id || index}
                           onClick={() => handleTeamSwitch(t)}
                           className={`block w-full px-4 py-2 text-left text-sm ${
                             t.id === teamId
@@ -361,12 +361,14 @@ export default function DashboardPage() {
                               : 'text-gray-700 hover:bg-gray-50'
                           }`}
                         >
-                          {t.name || 'Unnamed Team'}
+                          {index + 1}. {t.name || `Team ID: ${t.id}`}
                           {t.id === teamId && ' ✓'}
                         </button>
                       ))}
                       <div className="border-t border-gray-100 my-2" />
                     </>
+                  ) : (
+                    <div className="px-4 py-2 text-xs text-gray-400">No teams available</div>
                   )}
                   <button
                     onClick={handleLogout}
