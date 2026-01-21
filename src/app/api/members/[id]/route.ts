@@ -26,7 +26,7 @@ export async function PATCH(
   }
 }
 
-// DELETE - Remove member
+// DELETE - Remove member (blocked if has active task assignments)
 export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -34,6 +34,36 @@ export async function DELETE(
   try {
     const { id } = await context.params;
 
+    // Check if member has any active task assignments
+    // Active = step is not completed AND task is not completed
+    const { data: activeSteps } = await supabase
+      .from('pipeline_steps')
+      .select(`
+        id,
+        name,
+        status,
+        task:tasks!inner(id, title, status)
+      `)
+      .or(`assigned_to.eq.${id},additional_assignees.cs.{${id}}`)
+      .neq('status', 'completed');
+
+    // Filter to only tasks that are still active
+    const activeAssignments = activeSteps?.filter(
+      step => step.task && (step.task as { status: string }).status === 'active'
+    ) || [];
+
+    if (activeAssignments.length > 0) {
+      const taskTitles = [...new Set(activeAssignments.map(s => (s.task as { title: string }).title))];
+      return NextResponse.json({
+        error: 'Cannot delete member with active task assignments',
+        hasActiveAssignments: true,
+        activeCount: activeAssignments.length,
+        taskTitles: taskTitles.slice(0, 3), // Show first 3 task titles
+        suggestion: 'Archive the member instead, or reassign their tasks first'
+      }, { status: 400 });
+    }
+
+    // Safe to delete - no active assignments
     // Delete member_teams entries first
     await supabase
       .from('member_teams')

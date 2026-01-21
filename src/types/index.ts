@@ -29,6 +29,8 @@ export interface Member {
   name: string;
   email: string;
   role: UserRole;
+  is_archived?: boolean;
+  archived_at?: string;
   created_at: string;
 }
 

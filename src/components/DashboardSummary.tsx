@@ -17,44 +17,62 @@ interface MemberStats {
 }
 
 export default function DashboardSummary({ tasks, members }: DashboardSummaryProps) {
-  // Calculate stats for each member
-  const memberStats: MemberStats[] = members.map(member => {
-    let done = 0;
-    let now = 0;
-    let comingSoon = 0;
+  // Calculate stats for each member (only active members with valid names)
+  const memberStats: MemberStats[] = members
+    .filter(member => member.name && !member.is_archived) // Exclude archived and nameless members
+    .map(member => {
+      let done = 0;
+      let now = 0;
+      let comingSoon = 0;
 
-    tasks.forEach(task => {
-      task.pipeline_steps.forEach(step => {
-        const isAssigned = step.assigned_to === member.id ||
-          (step.additional_assignees && step.additional_assignees.includes(member.id));
+      tasks.forEach(task => {
+        task.pipeline_steps.forEach(step => {
+          const isAssigned = step.assigned_to === member.id ||
+            (step.additional_assignees && step.additional_assignees.includes(member.id));
 
-        if (isAssigned) {
-          if (step.status === 'completed') {
-            done++;
-          } else if (step.status === 'unlocked') {
-            now++;
-          } else if (step.status === 'locked') {
-            comingSoon++;
+          if (isAssigned) {
+            if (step.status === 'completed') {
+              done++;
+            } else if (step.status === 'unlocked') {
+              now++;
+            } else if (step.status === 'locked') {
+              comingSoon++;
+            }
           }
-        }
+        });
       });
-    });
 
-    return {
-      id: member.id,
-      name: member.name,
-      done,
-      now,
-      comingSoon,
-      total: done + now + comingSoon,
-    };
-  }).filter(m => m.total > 0);
+      return {
+        id: member.id,
+        name: member.name,
+        done,
+        now,
+        comingSoon,
+        total: done + now + comingSoon,
+      };
+    })
+    .filter(m => m.total > 0 && m.name); // Double-check: must have assignments AND valid name
 
   memberStats.sort((a, b) => b.now - a.now || b.total - a.total);
 
   if (tasks.length === 0) return null;
 
-  const getFirstName = (name: string) => name.split(' ')[0];
+  // Smart name display: use first name unless there are duplicates
+  const getDisplayName = (name: string, allNames: string[]) => {
+    if (!name) return 'Unknown';
+    const firstName = name.split(' ')[0];
+    // Check if any other name has the same first name
+    const duplicateFirstNames = allNames.filter(n => n && n.split(' ')[0] === firstName);
+    if (duplicateFirstNames.length > 1) {
+      // Multiple people with same first name - show more of the name
+      const parts = name.split(' ');
+      if (parts.length > 1) {
+        // Show first name + initial of last name (e.g., "Isaac T")
+        return `${parts[0]} ${parts[parts.length - 1][0]}`;
+      }
+    }
+    return firstName;
+  };
 
   // Calculate pipeline progress for each task
   const pipelineProgress = tasks.map(task => {
@@ -73,61 +91,67 @@ export default function DashboardSummary({ tasks, members }: DashboardSummaryPro
     };
   });
 
+  // Collect all names for smart display (from stats + pipeline assignees)
+  const allMemberNames = [
+    ...memberStats.map(m => m.name),
+    ...pipelineProgress.map(p => p.currentAssignee).filter(Boolean) as string[]
+  ];
+  const getFirstName = (name: string) => getDisplayName(name, allMemberNames);
+
   return (
-    <div className="mb-6 space-y-4">
-      {/* 1. Pipeline Progress Cards - Premium Design */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-teal-800 via-teal-700 to-emerald-800 p-5 shadow-xl">
+    <div className="mb-4 space-y-3">
+      {/* 1. Pipeline Progress Cards - Compact Design */}
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-teal-800 via-teal-700 to-emerald-800 p-3 shadow-lg">
         {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-400/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+        <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
 
         {/* Header */}
-        <div className="relative flex items-center justify-between mb-5">
-          <div className="flex items-center gap-4">
-            {/* Pipeline count - prominent */}
-            <div className="bg-white/15 backdrop-blur-sm px-5 py-2 rounded-xl border border-white/20">
-              <span className="text-3xl font-bold text-white">{tasks.length}</span>
-              <span className="text-sm text-teal-100 ml-2">pipeline{tasks.length !== 1 ? 's' : ''}</span>
+        <div className="relative flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            {/* Pipeline count - compact */}
+            <div className="bg-white/15 backdrop-blur-sm px-3 py-1 rounded-lg border border-white/20">
+              <span className="text-xl font-bold text-white">{tasks.length}</span>
+              <span className="text-xs text-teal-100 ml-1">pipeline{tasks.length !== 1 ? 's' : ''}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse shadow-lg shadow-emerald-400/50"></div>
-              <span className="text-base font-semibold text-white uppercase tracking-wide">Active</span>
-              <span className="text-sm text-teal-200">— waiting on</span>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+              <span className="text-sm font-semibold text-white uppercase tracking-wide">Active</span>
+              <span className="text-xs text-teal-200">— waiting on</span>
             </div>
           </div>
         </div>
 
         {/* Pipeline Cards */}
-        <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
           {pipelineProgress.map(pipeline => (
             <div
               key={pipeline.id}
-              className="group bg-white rounded-xl p-4 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+              className="group bg-white rounded-lg p-3 shadow-md hover:shadow-lg transition-all duration-200"
             >
               {/* Title + percentage */}
-              <div className="flex items-start justify-between mb-3">
-                <h3 className="text-base font-bold text-slate-800 leading-tight pr-2" title={pipeline.title}>
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="text-sm font-bold text-slate-800 leading-tight pr-2 line-clamp-1" title={pipeline.title}>
                   {pipeline.title}
                 </h3>
                 <div className="flex flex-col items-end flex-shrink-0">
-                  <span className="text-2xl font-bold text-teal-600">{pipeline.percent}%</span>
-                  <span className="text-xs text-slate-400">({pipeline.completed}/{pipeline.total})</span>
+                  <span className="text-lg font-bold text-teal-600">{pipeline.percent}%</span>
+                  <span className="text-[10px] text-slate-400">({pipeline.completed}/{pipeline.total})</span>
                 </div>
               </div>
 
               {/* Segmented progress bar */}
-              <div className="flex items-center gap-1 mb-3">
+              <div className="flex items-center gap-0.5 mb-2">
                 {Array.from({ length: pipeline.total }).map((_, i) => {
                   const isCompleted = i < pipeline.completed;
                   const isCurrent = i === pipeline.completed;
                   return (
                     <div
                       key={i}
-                      className={`h-2 flex-1 rounded-full transition-all ${
+                      className={`h-1.5 flex-1 rounded-full transition-all ${
                         isCompleted
-                          ? 'bg-gradient-to-r from-emerald-400 to-emerald-500 shadow-sm'
+                          ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
                           : isCurrent
-                          ? 'bg-gradient-to-r from-amber-400 to-orange-400 shadow-sm animate-pulse'
+                          ? 'bg-gradient-to-r from-amber-400 to-orange-400 animate-pulse'
                           : 'bg-slate-200'
                       }`}
                     />
@@ -136,21 +160,21 @@ export default function DashboardSummary({ tasks, members }: DashboardSummaryPro
               </div>
 
               {/* Current step info */}
-              <div className="flex items-center gap-2 text-sm bg-teal-50 rounded-lg px-3 py-2">
+              <div className="flex items-center gap-1.5 text-xs bg-teal-50 rounded-md px-2 py-1.5">
                 {pipeline.currentStep ? (
                   <>
                     {pipeline.currentAssignee && (
-                      <span className="font-semibold text-teal-700 bg-teal-100 px-2 py-0.5 rounded">
+                      <span className="font-semibold text-teal-700 bg-teal-100 px-1.5 py-0.5 rounded text-[11px]">
                         {getFirstName(pipeline.currentAssignee)}
                       </span>
                     )}
-                    <svg className="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3 h-3 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
-                    <span className="text-teal-700 truncate">{pipeline.currentStep}</span>
+                    <span className="text-teal-700 truncate text-[11px]">{pipeline.currentStep}</span>
                   </>
                 ) : (
-                  <span className="text-emerald-600 font-medium">All steps complete</span>
+                  <span className="text-emerald-600 font-medium text-[11px]">All steps complete</span>
                 )}
               </div>
             </div>
@@ -158,24 +182,24 @@ export default function DashboardSummary({ tasks, members }: DashboardSummaryPro
         </div>
       </div>
 
-      {/* 2. Team Member Cards - with explicit labels */}
+      {/* 2. Team Member Cards - compact */}
       {memberStats.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {memberStats.map(stat => {
             const isUrgent = stat.now > 0;
             return (
               <div
                 key={stat.id}
-                className={`rounded-lg p-2.5 w-[calc(50%-4px)] sm:w-[calc(33.333%-6px)] md:w-[calc(25%-6px)] lg:w-[140px] transition-all ${
+                className={`rounded-md p-2 w-[calc(50%-3px)] sm:w-[calc(25%-4px)] md:w-[calc(16.666%-5px)] lg:w-[115px] transition-all ${
                   isUrgent
-                    ? 'bg-orange-100 border-2 border-orange-400 shadow-sm'
+                    ? 'bg-orange-100 border-2 border-orange-400'
                     : 'bg-white border border-slate-200'
                 }`}
               >
-                <div className="font-medium text-slate-800 text-sm truncate mb-1.5" title={stat.name}>
+                <div className="font-medium text-slate-800 text-xs truncate mb-1" title={stat.name}>
                   {getFirstName(stat.name)}
                 </div>
-                <div className="flex flex-col gap-0.5 text-xs">
+                <div className="flex flex-col gap-0 text-[10px]">
                   <div className="flex items-center justify-between">
                     <span className="text-slate-500">Now</span>
                     <span className={`font-semibold ${isUrgent ? 'text-orange-600' : 'text-slate-400'}`}>{stat.now}</span>

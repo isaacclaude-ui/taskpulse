@@ -302,7 +302,7 @@ export default function AddLogPage() {
                                 ➕ Create &quot;{step.assigned_to_name}&quot; as new member
                               </option>
                               <optgroup label="Existing team members">
-                                {teamMembers.map(m => (
+                                {teamMembers.filter(m => !m.is_archived).map(m => (
                                   <option key={m.id} value={m.id}>
                                     {m.name} {m.name.toLowerCase().includes(step.assigned_to_name?.toLowerCase() || '') ? '✓' : ''}
                                   </option>
@@ -329,7 +329,7 @@ export default function AddLogPage() {
                               className="w-full text-xs p-1.5 rounded border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-teal-500"
                             >
                               <option value="">No one assigned</option>
-                              {teamMembers.map(m => (
+                              {teamMembers.filter(m => !m.is_archived).map(m => (
                                 <option key={m.id} value={m.id}>{m.name}</option>
                               ))}
                             </select>

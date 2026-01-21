@@ -60,9 +60,10 @@ export default function PipelineGrid({
     });
   });
 
-  // Filter members to only those assigned to tasks, or show all if few tasks
-  const relevantMembers = members.filter(m => peopleInTasks.has(m.id));
-  const displayMembers = relevantMembers.length > 0 ? relevantMembers : members.slice(0, 5);
+  // Filter members: only active (non-archived) members with valid names who are assigned to tasks
+  const activeMembers = members.filter(m => m.name && !m.is_archived);
+  const relevantMembers = activeMembers.filter(m => peopleInTasks.has(m.id));
+  const displayMembers = relevantMembers.length > 0 ? relevantMembers : activeMembers.slice(0, 5);
 
   // Fixed column widths
   const TASK_COL_WIDTH = 240;

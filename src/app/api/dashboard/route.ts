@@ -71,8 +71,11 @@ export async function GET(request: NextRequest) {
       ),
     }));
 
-    // Get team members for header
-    let membersQuery = supabase.from('members').select('id, name, email');
+    // Get team members for header (exclude archived members)
+    let membersQuery = supabase
+      .from('members')
+      .select('id, name, email, is_archived')
+      .or('is_archived.is.null,is_archived.eq.false'); // Only active members
 
     if (teamId) {
       const { data: memberTeams } = await supabase

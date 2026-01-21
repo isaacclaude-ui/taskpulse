@@ -386,14 +386,14 @@ export default function DashboardPage() {
       </header>
 
       {/* Announcements, Shared Links & Calendar Section */}
-      <div className="max-w-7xl mx-auto px-4 py-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4" style={{ minHeight: '20vh' }}>
+      <div className="max-w-7xl mx-auto px-4 py-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3" style={{ minHeight: '16vh' }}>
           {/* Announcements - Left */}
-          <div className="glass-card rounded-xl p-4 flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center shadow-sm">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="glass-card rounded-xl p-3 flex flex-col">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                <div className="w-6 h-6 rounded-md bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
+                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
                   </svg>
                 </div>
@@ -402,26 +402,23 @@ export default function DashboardPage() {
               {announcements.length > 3 && (
                 <button
                   onClick={() => setShowAllAnnouncements(true)}
-                  className="text-xs text-teal-600 hover:text-teal-700 font-medium"
+                  className="text-[10px] text-teal-600 hover:text-teal-700 font-medium"
                 >
                   View All ({announcements.length})
                 </button>
               )}
             </div>
-            <div className="flex-1 overflow-y-auto space-y-2">
+            <div className="flex-1 overflow-y-auto space-y-1.5">
               {announcements.length === 0 ? (
-                <p className="text-sm text-slate-400 text-center py-4">No announcements yet</p>
+                <p className="text-xs text-slate-400 text-center py-3">No announcements yet</p>
               ) : (
                 announcements.slice(0, 3).map((announcement) => (
-                  <div key={announcement.id} className="bg-slate-50 rounded-lg p-3 border-l-3 border-teal-500">
-                    <p className="text-sm text-slate-700 whitespace-pre-wrap">{announcement.content}</p>
-                    <div className="flex items-center gap-2 mt-2 text-xs text-slate-400">
+                  <div key={announcement.id} className="bg-slate-50 rounded-md p-2 border-l-2 border-teal-500">
+                    <p className="text-xs text-slate-700 whitespace-pre-wrap line-clamp-2">{announcement.content}</p>
+                    <div className="flex items-center gap-1.5 mt-1 text-[10px] text-slate-400">
                       <span>{(announcement.member as { name?: string })?.name || 'Unknown'}</span>
                       <span>•</span>
                       <span>{new Date(announcement.created_at).toLocaleDateString()}</span>
-                      {announcement.updated_at !== announcement.created_at && (
-                        <span className="text-slate-300">(edited)</span>
-                      )}
                     </div>
                   </div>
                 ))
@@ -430,10 +427,10 @@ export default function DashboardPage() {
           </div>
 
           {/* Shared Links - Middle */}
-          <div className="glass-card rounded-xl p-4 flex flex-col">
-            <h2 className="text-base font-bold text-slate-800 flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="glass-card rounded-xl p-3 flex flex-col">
+            <h2 className="text-sm font-bold text-slate-800 flex items-center gap-1.5 mb-2">
+              <div className="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                 </svg>
               </div>
@@ -441,13 +438,13 @@ export default function DashboardPage() {
             </h2>
             <div className="flex-1 overflow-y-auto">
               {sharedLinks.length === 0 ? (
-                <p className="text-sm text-slate-400 text-center py-4">No shared links yet</p>
+                <p className="text-xs text-slate-400 text-center py-3">No shared links yet</p>
               ) : (
-                <table className="w-full text-sm">
+                <table className="w-full text-xs">
                   <tbody>
                     {sharedLinks.map((link) => (
                       <tr key={link.id} className="border-b border-slate-100 last:border-0">
-                        <td className="py-2 pr-2">
+                        <td className="py-1.5 pr-2">
                           <a
                             href={link.url}
                             target="_blank"
@@ -457,17 +454,17 @@ export default function DashboardPage() {
                             {link.title}
                           </a>
                           {link.description && (
-                            <p className="text-xs text-slate-400 mt-0.5">{link.description}</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5 line-clamp-1">{link.description}</p>
                           )}
                         </td>
-                        <td className="py-2 text-right">
+                        <td className="py-1.5 text-right">
                           <a
                             href={link.url}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-slate-400 hover:text-teal-600"
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                             </svg>
                           </a>
@@ -481,17 +478,17 @@ export default function DashboardPage() {
           </div>
 
           {/* Calendar - Right */}
-          <div className="glass-card rounded-xl p-4 flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-sm">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="glass-card rounded-xl p-3 flex flex-col">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                <div className="w-6 h-6 rounded-md bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </div>
                 Calendar
               </h2>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5">
                 <button
                   onClick={() => {
                     const [year, month] = calendarMonth.split('-').map(Number);
@@ -500,14 +497,14 @@ export default function DashboardPage() {
                     setCalendarMonth(newMonth);
                     loadCalendarEvents(newMonth);
                   }}
-                  className="p-1 hover:bg-slate-100 rounded"
+                  className="p-0.5 hover:bg-slate-100 rounded"
                   title="Previous month"
                 >
-                  <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
                 </button>
-                <span className="text-xs font-medium text-slate-600 min-w-[80px] text-center">
+                <span className="text-[10px] font-medium text-slate-600 min-w-[60px] text-center">
                   {new Date(calendarMonth + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                 </span>
                 <button
@@ -518,10 +515,10 @@ export default function DashboardPage() {
                     setCalendarMonth(newMonth);
                     loadCalendarEvents(newMonth);
                   }}
-                  className="p-1 hover:bg-slate-100 rounded"
+                  className="p-0.5 hover:bg-slate-100 rounded"
                   title="Next month"
                 >
-                  <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </button>
@@ -532,7 +529,7 @@ export default function DashboardPage() {
                     setCalendarMonth(todayMonth);
                     loadCalendarEvents(todayMonth);
                   }}
-                  className="ml-1 px-2 py-0.5 text-xs text-teal-600 hover:bg-teal-50 rounded font-medium"
+                  className="ml-1 px-1.5 py-0.5 text-[10px] text-teal-600 hover:bg-teal-50 rounded font-medium"
                   title="Go to today"
                 >
                   Today
@@ -543,9 +540,9 @@ export default function DashboardPage() {
             {/* Calendar Grid */}
             <div className="flex-1">
               {/* Day headers */}
-              <div className="grid grid-cols-7 gap-px mb-1">
+              <div className="grid grid-cols-7 gap-px mb-0.5">
                 {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
-                  <div key={day} className="text-xs text-slate-400 text-center py-1">{day}</div>
+                  <div key={day} className="text-[10px] text-slate-400 text-center py-0.5">{day}</div>
                 ))}
               </div>
               {/* Calendar days */}
@@ -560,7 +557,7 @@ export default function DashboardPage() {
                   const days = [];
                   // Empty cells for days before first of month
                   for (let i = 0; i < firstDay; i++) {
-                    days.push(<div key={`empty-${i}`} className="min-h-[52px]" />);
+                    days.push(<div key={`empty-${i}`} className="min-h-[40px]" />);
                   }
                   // Days of the month
                   for (let day = 1; day <= daysInMonth; day++) {
@@ -573,13 +570,13 @@ export default function DashboardPage() {
                       <button
                         key={day}
                         onClick={() => setSelectedDate(isSelected ? null : dateStr)}
-                        className={`min-h-[52px] text-xs rounded flex flex-col items-center pt-0.5 transition-colors overflow-hidden ${
+                        className={`min-h-[40px] text-xs rounded flex flex-col items-center pt-0.5 transition-colors overflow-hidden ${
                           isToday ? 'bg-teal-100 font-semibold text-teal-700' :
                           isSelected ? 'bg-slate-200' :
                           'hover:bg-slate-50'
                         }`}
                       >
-                        <span className="text-[10px]">{day}</span>
+                        <span className="text-[9px]">{day}</span>
                         {dayEvents.length > 0 && (
                           <div className="w-full px-0.5 mt-0.5 space-y-0.5 overflow-hidden">
                             {dayEvents.slice(0, 2).map((event, idx) => (

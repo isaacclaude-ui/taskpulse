@@ -38,6 +38,8 @@ const EVENT_COLORS = [
 
 interface MemberWithTeams extends Member {
   teamIds: string[];
+  is_archived?: boolean;
+  archived_at?: string;
 }
 
 export default function AdminPage() {
@@ -248,12 +250,73 @@ export default function AdminPage() {
     if (!confirm('Delete this member?')) return;
 
     try {
-      await fetch(`/api/members/${memberId}`, {
+      const res = await fetch(`/api/members/${memberId}`, {
         method: 'DELETE',
       });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (data.hasActiveAssignments) {
+          // Member has active task assignments - offer to archive instead
+          const taskList = data.taskTitles?.join(', ') || 'active tasks';
+          const archiveInstead = confirm(
+            `Cannot delete: This member is assigned to ${data.activeCount} step(s) in "${taskList}".\n\n` +
+            `Would you like to archive them instead? Archived members won't appear in assignment dropdowns but existing assignments remain intact.`
+          );
+
+          if (archiveInstead) {
+            await handleArchiveMember(memberId);
+          }
+        } else {
+          alert(data.error || 'Failed to delete member');
+        }
+        return;
+      }
+
       loadData();
     } catch (error) {
       console.error('Failed to delete member:', error);
+    }
+  };
+
+  const handleArchiveMember = async (memberId: string) => {
+    try {
+      const res = await fetch(`/api/members/${memberId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          is_archived: true,
+          archived_at: new Date().toISOString(),
+        }),
+      });
+
+      if (res.ok) {
+        loadData();
+      } else {
+        alert('Failed to archive member');
+      }
+    } catch (error) {
+      console.error('Failed to archive member:', error);
+    }
+  };
+
+  const handleUnarchiveMember = async (memberId: string) => {
+    try {
+      const res = await fetch(`/api/members/${memberId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          is_archived: false,
+          archived_at: null,
+        }),
+      });
+
+      if (res.ok) {
+        loadData();
+      }
+    } catch (error) {
+      console.error('Failed to unarchive member:', error);
     }
   };
 
@@ -876,16 +939,25 @@ export default function AdminPage() {
                                 </button>
                               </div>
                             ) : (
-                              <button
-                                onClick={() => {
-                                  setEditingMemberId(m.id);
-                                  setEditingMemberName(m.name);
-                                }}
-                                className="font-medium text-gray-900 hover:text-teal-600 hover:underline text-left"
-                                title="Click to edit name"
-                              >
-                                {m.name}
-                              </button>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => {
+                                    setEditingMemberId(m.id);
+                                    setEditingMemberName(m.name);
+                                  }}
+                                  className={`font-medium hover:text-teal-600 hover:underline text-left ${
+                                    m.is_archived ? 'text-gray-400' : 'text-gray-900'
+                                  }`}
+                                  title="Click to edit name"
+                                >
+                                  {m.name}
+                                </button>
+                                {m.is_archived && (
+                                  <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
+                                    Archived
+                                  </span>
+                                )}
+                              </div>
                             )}
                           </td>
                           <td className="py-3 px-2">
@@ -935,15 +1007,38 @@ export default function AdminPage() {
                             </select>
                           </td>
                           <td className="py-3 px-2 text-center">
-                            <button
-                              onClick={() => handleDeleteMember(m.id)}
-                              className="text-gray-400 hover:text-red-600 p-1"
-                              title="Delete member"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
+                            <div className="flex items-center justify-center gap-1">
+                              {m.is_archived ? (
+                                <button
+                                  onClick={() => handleUnarchiveMember(m.id)}
+                                  className="text-amber-500 hover:text-amber-600 p-1"
+                                  title="Unarchive member"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                  </svg>
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleArchiveMember(m.id)}
+                                  className="text-gray-400 hover:text-amber-600 p-1"
+                                  title="Archive member"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                                  </svg>
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleDeleteMember(m.id)}
+                                className="text-gray-400 hover:text-red-600 p-1"
+                                title="Delete member"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}

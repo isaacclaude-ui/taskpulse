@@ -8,6 +8,16 @@ interface ChatMessage {
   content: string;
 }
 
+// User-confirmed assignment for a step (same as add-log)
+interface ConfirmedAssignment {
+  stepIndex: number;
+  memberId: string | null;
+  memberName: string;
+  isConfirmed: boolean;
+  extractedName: string | null;
+  isLocked: boolean; // NEW: Completed steps are locked
+}
+
 interface TaskEditModalProps {
   task: TaskWithSteps | null;
   isOpen: boolean;
@@ -44,6 +54,10 @@ export default function TaskEditModal({
   const [extractedData, setExtractedData] = useState<ExtractedTaskData | null>(null);
   const [matchedMembers, setMatchedMembers] = useState<{ step_index: number; member_id: string; member_name: string }[]>([]);
 
+  // Member confirmation state (same pattern as add-log)
+  const [teamMembers, setTeamMembers] = useState<Member[]>([]);
+  const [confirmedAssignments, setConfirmedAssignments] = useState<ConfirmedAssignment[]>([]);
+
   // Initialize with current task data when modal opens
   useEffect(() => {
     if (isOpen && task) {
@@ -74,6 +88,20 @@ export default function TaskEditModal({
         .filter(m => m.member_id);
       setMatchedMembers(matched);
 
+      // Initialize confirmed assignments with preset data & lock completed steps
+      const initialAssignments: ConfirmedAssignment[] = task.pipeline_steps.map((step, index) => ({
+        stepIndex: index,
+        memberId: step.assigned_to || null,
+        memberName: step.member?.name || step.assigned_to_name || '',
+        isConfirmed: !!step.assigned_to,
+        extractedName: step.assigned_to_name || null,
+        isLocked: step.status === 'completed', // Lock completed steps
+      }));
+      setConfirmedAssignments(initialAssignments);
+
+      // Fetch team members
+      fetchTeamMembers();
+
       // Start with an initial AI message
       setMessages([{
         role: 'assistant',
@@ -84,6 +112,44 @@ export default function TaskEditModal({
       setError('');
     }
   }, [isOpen, task]);
+
+  // Fetch team members for dropdowns
+  const fetchTeamMembers = async () => {
+    try {
+      const res = await fetch(`/api/teams/${teamId}/members`);
+      if (res.ok) {
+        const data = await res.json();
+        setTeamMembers(data.members || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch team members:', err);
+    }
+  };
+
+  // Handle user changing a member assignment
+  const handleAssignmentChange = (stepIndex: number, memberId: string | null, memberName: string) => {
+    setConfirmedAssignments(prev => {
+      const updated = [...prev];
+      const existing = updated.findIndex(a => a.stepIndex === stepIndex);
+      if (existing >= 0 && !updated[existing].isLocked) {
+        updated[existing] = {
+          ...updated[existing],
+          memberId,
+          memberName,
+          isConfirmed: true,
+        };
+      }
+      return updated;
+    });
+    // Also update matchedMembers for the save
+    setMatchedMembers(prev => {
+      const filtered = prev.filter(m => m.step_index !== stepIndex);
+      if (memberId) {
+        filtered.push({ step_index: stepIndex, member_id: memberId, member_name: memberName });
+      }
+      return filtered;
+    });
+  };
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -218,37 +284,129 @@ export default function TaskEditModal({
 
                   <div className="mt-3 space-y-2">
                     {extractedData.pipeline_steps.map((step, i) => {
-                      const match = matchedMembers.find(m => m.step_index === i);
+                      const confirmed = confirmedAssignments.find(a => a.stepIndex === i);
                       const isCompleted = step.status === 'completed';
+                      const isLocked = confirmed?.isLocked || isCompleted;
+                      const hasMatch = confirmed?.memberId !== null;
+                      const hasExtractedName = !!step.assigned_to_name;
+
                       return (
                         <div
                           key={i}
                           className={`p-2 rounded text-xs ${
                             isCompleted
                               ? 'bg-emerald-50 border border-emerald-200'
-                              : match
+                              : hasMatch
                               ? 'bg-teal-50 border border-teal-200'
+                              : hasExtractedName
+                              ? 'bg-amber-50 border border-amber-200'
                               : 'bg-gray-50 border border-gray-200'
                           }`}
                         >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <p className={`font-medium ${isCompleted ? 'text-emerald-700 line-through' : 'text-gray-700'}`}>
-                                {i + 1}. {step.name}
-                              </p>
-                              {(match || step.assigned_to_name) && (
-                                <p className={`mt-0.5 ${isCompleted ? 'text-emerald-600' : match ? 'text-teal-600' : 'text-gray-500'}`}>
-                                  {match ? match.member_name : step.assigned_to_name}
-                                  {step.is_joint && step.additional_assignee_names && step.additional_assignee_names.length > 0 && (
-                                    <span className="text-purple-600"> or {step.additional_assignee_names.filter(n => n !== step.assigned_to_name).join(' or ')}</span>
-                                  )}
-                                </p>
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <p className={`font-medium flex-1 ${
+                              isCompleted ? 'text-emerald-700 line-through' :
+                              hasMatch ? 'text-teal-800' :
+                              hasExtractedName ? 'text-amber-800' : 'text-gray-700'
+                            }`}>
+                              {i + 1}. {step.name}
+                              {isCompleted && (
+                                <span className="ml-2 text-[10px] font-normal bg-emerald-200 text-emerald-700 px-1.5 py-0.5 rounded">
+                                  DONE
+                                </span>
                               )}
-                            </div>
-                            <span className="text-gray-400 shrink-0">
+                            </p>
+                            <span className="text-gray-400 shrink-0 text-[10px]">
                               {formatDate(step.mini_deadline)}
                             </span>
                           </div>
+
+                          {/* Member assignment dropdown - same as add-log */}
+                          {(hasExtractedName || confirmed?.memberId) && (
+                            <div className="mt-1.5">
+                              {hasExtractedName && (
+                                <div className="flex items-center gap-1 mb-1">
+                                  <span className="text-[10px] text-gray-500">
+                                    {isLocked ? 'Assigned:' : 'AI found:'}
+                                  </span>
+                                  <span className={`text-[10px] font-medium ${
+                                    isCompleted ? 'text-emerald-600' :
+                                    hasMatch ? 'text-teal-600' : 'text-amber-600'
+                                  }`}>
+                                    &quot;{step.assigned_to_name}&quot;
+                                  </span>
+                                  {!hasMatch && !isLocked && (
+                                    <span className="text-[10px] text-amber-500">(new)</span>
+                                  )}
+                                </div>
+                              )}
+                              <select
+                                value={confirmed?.memberId || '__new__'}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  if (val === '__new__') {
+                                    handleAssignmentChange(i, null, step.assigned_to_name || '');
+                                  } else {
+                                    const selectedMember = teamMembers.find(m => m.id === val);
+                                    handleAssignmentChange(i, val, selectedMember?.name || '');
+                                  }
+                                }}
+                                disabled={isLocked}
+                                className={`w-full text-xs p-1.5 rounded border ${
+                                  isLocked
+                                    ? 'border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed'
+                                    : hasMatch
+                                    ? 'border-teal-300 bg-white text-teal-800'
+                                    : 'border-amber-300 bg-white text-amber-800'
+                                } focus:outline-none focus:ring-1 focus:ring-teal-500`}
+                              >
+                                {hasExtractedName && (
+                                  <option value="__new__">
+                                    {isLocked ? `${step.assigned_to_name}` : `➕ Create "${step.assigned_to_name}" as new member`}
+                                  </option>
+                                )}
+                                <optgroup label="Team members">
+                                  {teamMembers.filter(m => !m.is_archived).map(m => (
+                                    <option key={m.id} value={m.id}>
+                                      {m.name} {hasExtractedName && m.name.toLowerCase().includes(step.assigned_to_name?.toLowerCase() || '') ? '✓' : ''}
+                                    </option>
+                                  ))}
+                                </optgroup>
+                              </select>
+                              {isLocked && (
+                                <p className="text-[10px] text-gray-400 mt-0.5">
+                                  Locked (step completed)
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          {/* No name - show dropdown to assign */}
+                          {!hasExtractedName && !confirmed?.memberId && (
+                            <div className="mt-1.5">
+                              <select
+                                value=""
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  if (val) {
+                                    const selectedMember = teamMembers.find(m => m.id === val);
+                                    handleAssignmentChange(i, val, selectedMember?.name || '');
+                                  }
+                                }}
+                                disabled={isLocked}
+                                className={`w-full text-xs p-1.5 rounded border ${
+                                  isLocked
+                                    ? 'border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed'
+                                    : 'border-gray-300 bg-white text-gray-700'
+                                } focus:outline-none focus:ring-1 focus:ring-teal-500`}
+                              >
+                                <option value="">No one assigned</option>
+                                {teamMembers.filter(m => !m.is_archived).map(m => (
+                                  <option key={m.id} value={m.id}>{m.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
