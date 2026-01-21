@@ -79,6 +79,9 @@ export default function AdminPage() {
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [editingMemberName, setEditingMemberName] = useState('');
 
+  // Member filtering
+  const [memberTeamFilter, setMemberTeamFilter] = useState<string>('all');
+
   // Email settings
   interface EmailMember {
     id: string;
@@ -884,6 +887,30 @@ export default function AdminPage() {
                   </div>
                 )}
 
+                {/* Team filter */}
+                <div className="mt-4 flex items-center gap-3">
+                  <label className="text-sm text-gray-600">Filter by team:</label>
+                  <select
+                    value={memberTeamFilter}
+                    onChange={(e) => setMemberTeamFilter(e.target.value)}
+                    className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  >
+                    <option value="all">All Teams</option>
+                    <option value="none">No Team</option>
+                    {teams.map(t => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                  <span className="text-xs text-gray-400">
+                    {memberTeamFilter === 'all'
+                      ? `${members.length} members total`
+                      : memberTeamFilter === 'none'
+                      ? `${members.filter(m => !m.teamIds || m.teamIds.length === 0).length} members`
+                      : `${members.filter(m => m.teamIds?.includes(memberTeamFilter)).length} members`
+                    }
+                  </span>
+                </div>
+
                 {/* Members table */}
                 <div className="mt-4 overflow-x-auto">
                   <table className="w-full">
@@ -897,7 +924,13 @@ export default function AdminPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {members.map((m) => (
+                      {members
+                        .filter(m => {
+                          if (memberTeamFilter === 'all') return true;
+                          if (memberTeamFilter === 'none') return !m.teamIds || m.teamIds.length === 0;
+                          return m.teamIds?.includes(memberTeamFilter);
+                        })
+                        .map((m) => (
                         <tr key={m.id} className="hover:bg-gray-50">
                           <td className="py-3 px-2">
                             {editingMemberId === m.id ? (
