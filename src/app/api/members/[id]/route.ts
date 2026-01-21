@@ -49,11 +49,17 @@ export async function DELETE(
 
     // Filter to only tasks that are still active
     const activeAssignments = activeSteps?.filter(
-      step => step.task && (step.task as { status: string }).status === 'active'
+      step => {
+        const task = step.task as unknown as { status: string } | null;
+        return task && task.status === 'active';
+      }
     ) || [];
 
     if (activeAssignments.length > 0) {
-      const taskTitles = [...new Set(activeAssignments.map(s => (s.task as { title: string }).title))];
+      const taskTitles = [...new Set(activeAssignments.map(s => {
+        const task = s.task as unknown as { title: string };
+        return task.title;
+      }))];
       return NextResponse.json({
         error: 'Cannot delete member with active task assignments',
         hasActiveAssignments: true,
