@@ -9,7 +9,19 @@ export async function GET(
   try {
     const { id } = await context.params;
 
-    // First get team IDs for this member
+    // Get member info to check role and business
+    const { data: member, error: memberError } = await supabase
+      .from('members')
+      .select('role, business_id')
+      .eq('id', id)
+      .single();
+
+    if (memberError) {
+      console.error('Error fetching member:', memberError);
+      return NextResponse.json({ error: memberError.message }, { status: 500 });
+    }
+
+    // First try to get team IDs from member_teams
     const { data: memberTeams, error: mtError } = await supabase
       .from('member_teams')
       .select('team_id')
@@ -20,13 +32,28 @@ export async function GET(
       return NextResponse.json({ error: mtError.message }, { status: 500 });
     }
 
-    const teamIds = memberTeams?.map(mt => mt.team_id) || [];
+    let teamIds = memberTeams?.map(mt => mt.team_id) || [];
+
+    // If no member_teams entries but user is admin, get all teams in their business
+    if (teamIds.length === 0 && member?.role === 'admin' && member?.business_id) {
+      const { data: allTeams, error: allTeamsError } = await supabase
+        .from('teams')
+        .select('id, name, business_id')
+        .eq('business_id', member.business_id);
+
+      if (allTeamsError) {
+        console.error('Error fetching all teams:', allTeamsError);
+        return NextResponse.json({ error: allTeamsError.message }, { status: 500 });
+      }
+
+      return NextResponse.json({ teams: allTeams || [] });
+    }
 
     if (teamIds.length === 0) {
       return NextResponse.json({ teams: [] });
     }
 
-    // Then fetch the actual team data
+    // Fetch the actual team data
     const { data: teams, error: teamsError } = await supabase
       .from('teams')
       .select('id, name, business_id')
@@ -37,7 +64,7 @@ export async function GET(
       return NextResponse.json({ error: teamsError.message }, { status: 500 });
     }
 
-    return NextResponse.json({ teams });
+    return NextResponse.json({ teams: teams || [] });
   } catch (error) {
     console.error('Get member teams error:', error);
     return NextResponse.json({ error: 'Failed to get teams' }, { status: 500 });
