@@ -6,7 +6,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { useNav } from '@/context/NavContext';
 import type { Team, Member, PendingUser, Announcement, SharedLink, CalendarEvent } from '@/types';
 
-type Tab = 'members' | 'teams' | 'pending' | 'emails' | 'content' | 'settings';
+type Tab = 'settings' | 'teams' | 'members' | 'pending' | 'notifications' | 'content';
 
 // Preset colors for calendar events (full standard palette)
 const EVENT_COLORS = [
@@ -46,7 +46,7 @@ export default function AdminPage() {
   const router = useRouter();
   const { business, member } = useNav();
 
-  const [activeTab, setActiveTab] = useState<Tab>('members');
+  const [activeTab, setActiveTab] = useState<Tab>('settings');
   const [teams, setTeams] = useState<Team[]>([]);
   const [members, setMembers] = useState<MemberWithTeams[]>([]);
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
@@ -814,25 +814,21 @@ export default function AdminPage() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-6">
-        {/* Tabs */}
+        {/* Tabs - Order: Settings, Teams, Members, Pending, Notifications, Content */}
         <div className="flex flex-wrap gap-2 mb-6">
           <button
-            onClick={() => setActiveTab('pending')}
+            onClick={() => setActiveTab('settings')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-              activeTab === 'pending'
+              activeTab === 'settings'
                 ? 'bg-teal-600 text-white'
                 : 'bg-white text-gray-600 hover:bg-gray-50'
             }`}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            Pending
-            {pendingUsers.length > 0 && (
-              <span className="bg-amber-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                {pendingUsers.length}
-              </span>
-            )}
+            Settings
           </button>
           <button
             onClick={() => setActiveTab('teams')}
@@ -861,17 +857,35 @@ export default function AdminPage() {
             Members
           </button>
           <button
-            onClick={() => setActiveTab('emails')}
+            onClick={() => setActiveTab('pending')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-              activeTab === 'emails'
+              activeTab === 'pending'
                 ? 'bg-teal-600 text-white'
                 : 'bg-white text-gray-600 hover:bg-gray-50'
             }`}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
             </svg>
-            Emails
+            Pending
+            {pendingUsers.length > 0 && (
+              <span className="bg-amber-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                {pendingUsers.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('notifications')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+              activeTab === 'notifications'
+                ? 'bg-teal-600 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            Notifications
           </button>
           <button
             onClick={() => {
@@ -891,20 +905,6 @@ export default function AdminPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
             </svg>
             Content
-          </button>
-          <button
-            onClick={() => setActiveTab('settings')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-              activeTab === 'settings'
-                ? 'bg-teal-600 text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            Settings
           </button>
         </div>
 
@@ -1491,11 +1491,11 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* Emails Tab */}
-            {activeTab === 'emails' && (
+            {/* Notifications Tab */}
+            {activeTab === 'notifications' && (
               <div className="glass-card rounded-xl p-6">
                 <div className="mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900">Email Digests</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">Notifications</h2>
                   <p className="text-sm text-gray-500">
                     Team leads and admins can receive dashboard summary emails.
                   </p>
