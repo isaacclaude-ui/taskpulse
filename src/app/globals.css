@@ -102,8 +102,9 @@ body {
 
 /* Step Status Colors - Task Pulse Theme */
 .step-locked {
-  background: #f1f5f9;
-  color: #94a3b8;
+  background: #f8fafc;
+  color: #cbd5e1;
+  opacity: 0.55;
 }
 
 .step-unlocked {
@@ -112,8 +113,9 @@ body {
 }
 
 .step-completed {
-  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
   border-left: 3px solid #10b981;
+  opacity: 0.65;
 }
 
 /* Status Badges */
