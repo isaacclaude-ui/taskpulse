@@ -344,8 +344,8 @@ export default function DashboardPage() {
                   </svg>
                 </button>
                 <div
-                  className="absolute right-0 mt-2 bg-white rounded-lg shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50"
-                  style={{ minWidth: '280px', maxWidth: '350px' }}
+                  className="absolute right-0 mt-2 bg-white rounded-lg shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-visible"
+                  style={{ minWidth: '280px' }}
                 >
                   {/* Team switcher section */}
                   {availableTeams.length > 0 && (
@@ -361,8 +361,8 @@ export default function DashboardPage() {
                               : 'text-gray-700 hover:bg-gray-50'
                           }`}
                         >
-                          <span className="block truncate">{t.name}</span>
-                          {t.id === teamId && <span className="text-teal-500 ml-1">✓</span>}
+                          {t.name || 'Unnamed Team'}
+                          {t.id === teamId && ' ✓'}
                         </button>
                       ))}
                       <div className="border-t border-gray-100 my-2" />
