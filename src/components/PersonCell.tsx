@@ -116,7 +116,7 @@ export default function PersonCell({
         {/* Before indicator */}
         <div className="text-[9px] text-gray-400 mb-1 relative">
           {isFirst ? (
-            <span className={status === 'completed' ? 'text-gray-500' : status === 'active' ? 'text-green-500' : 'text-blue-400'}>● First Step</span>
+            <span className="text-gray-500">● First Step</span>
           ) : (
             <span>← From: {getPersonName(prevStep)}</span>
           )}
@@ -149,7 +149,7 @@ export default function PersonCell({
         {/* After indicator */}
         <div className="text-[9px] text-gray-400 mt-1 relative">
           {isLast ? (
-            <span className={status === 'completed' ? 'text-gray-500' : 'text-green-500'}>● Final Step</span>
+            <span className="text-gray-500">● Final Step</span>
           ) : (
             <span>→ To: {getPersonName(nextStep)}</span>
           )}
