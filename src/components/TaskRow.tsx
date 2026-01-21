@@ -94,14 +94,15 @@ export default function TaskRow({
         style={{ width: `${TASK_COL_WIDTH}px`, minWidth: `${TASK_COL_WIDTH}px`, maxWidth: `${TASK_COL_WIDTH}px` }}
       >
         <div className="flex items-start gap-2">
-          <div className="flex-1 min-w-0">
-            {/* Title - clickable to open AI editor */}
-            <div
-              className="flex items-start gap-1 cursor-pointer hover:bg-teal-50 -m-1 p-1 rounded transition-colors group"
-              onClick={() => onTaskEdit(task.id)}
-              title="Click to edit with AI"
-            >
-              <span className="font-medium text-gray-900 text-xs leading-tight line-clamp-2">
+          {/* Single clickable area for pipeline info - opens AI editor */}
+          <div
+            className="flex-1 min-w-0 cursor-pointer hover:bg-teal-50 -m-1 p-1 rounded transition-colors group"
+            onClick={() => onTaskEdit(task.id)}
+            title="Click to edit with AI"
+          >
+            {/* Title row */}
+            <div className="flex items-start gap-1">
+              <span className="font-medium text-gray-900 text-xs leading-tight line-clamp-2 group-hover:text-teal-700">
                 {task.title}
               </span>
               {task.recurrence?.enabled && (
@@ -118,30 +119,18 @@ export default function TaskRow({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
             </div>
-            {/* Deadline display */}
+            {/* Deadline */}
             {task.deadline && (
-              <div className="text-xs mt-1 px-1 -mx-1">
+              <div className="text-xs mt-1">
                 <span className={isOverdue ? 'text-red-600' : 'text-gray-500'}>
                   Due: {new Date(task.deadline).toLocaleDateString()}
                 </span>
               </div>
             )}
-            {/* AI-generated workflow summary - clickable to open AI editor */}
-            <div
-              className="mt-1 cursor-pointer hover:bg-teal-50 -mx-1 px-1 rounded transition-colors group/desc"
-              onClick={() => onTaskEdit(task.id)}
-              title="Click to edit with AI"
-            >
-              {task.description ? (
-                <p className="text-[10px] text-gray-400 line-clamp-2 group-hover/desc:text-teal-600">
-                  {task.description}
-                </p>
-              ) : (
-                <p className="text-[10px] text-gray-400 group-hover/desc:text-teal-600">
-                  + Edit with AI
-                </p>
-              )}
-            </div>
+            {/* Description or edit prompt */}
+            <p className="text-[10px] text-gray-400 mt-1 group-hover:text-teal-600 line-clamp-2">
+              {task.description || '+ Edit with AI'}
+            </p>
           </div>
           {/* Action buttons */}
           <div className="flex-shrink-0 flex items-center gap-1">
