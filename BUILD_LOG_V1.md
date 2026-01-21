@@ -30,6 +30,7 @@ CREATE TABLE teams (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   business_id UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
+  logo_url TEXT DEFAULT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -40,6 +41,8 @@ CREATE TABLE members (
   name TEXT NOT NULL,
   email TEXT UNIQUE, -- nullable for non-login users
   role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'lead', 'user')),
+  is_archived BOOLEAN DEFAULT FALSE,
+  archived_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -62,6 +65,9 @@ CREATE TABLE tasks (
   actionables TEXT[],
   deadline TIMESTAMPTZ,
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed')),
+  recurrence JSONB DEFAULT NULL, -- {"type": "daily"|"weekly"|"monthly", "interval": number, "enabled": boolean}
+  source_task_id UUID REFERENCES tasks(id) ON DELETE SET NULL,
+  recurrence_count INTEGER DEFAULT 0,
   created_by UUID REFERENCES members(id),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   completed_at TIMESTAMPTZ
@@ -297,6 +303,8 @@ AI Model: `llama-3.1-8b-instant` via Groq
 | `/api/shared-links/[id]` | PATCH, DELETE | Update/delete link |
 | `/api/calendar-events` | GET, POST | Team calendar events |
 | `/api/calendar-events/[id]` | PATCH, DELETE | Update/delete event |
+| `/api/teams/[id]/logo` | POST, DELETE | Upload/remove team logo |
+| `/api/send-invite` | POST | Send invite email to member |
 
 ---
 
@@ -487,8 +495,19 @@ Read ~/BUILD_LOGS/taskpulse-v1.md for complete schema SQL, all API routes, and i
 
 ---
 
+## 10. Supabase Storage
+
+**Bucket:** `team-logos` (Public)
+- Stores team logo images
+- Files named `{team_id}.{ext}` (png, jpg, webp)
+- Max 1MB per file
+- Service role key used for uploads
+
+---
+
 ## Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
 | v1.0 | 2026-01-21 | Initial release with full pipeline management, AI extraction, joint tasks, notifications, email digests, admin panel |
+| v1.0.1 | 2026-01-22 | Added team logo upload, member archiving, recurring tasks, improved member deletion |
