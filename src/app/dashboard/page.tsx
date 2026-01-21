@@ -344,8 +344,8 @@ export default function DashboardPage() {
                   </svg>
                 </button>
                 <div
-                  className="absolute right-0 mt-2 bg-white rounded-lg shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50"
-                  style={{ minWidth: '220px', width: 'max-content' }}
+                  className="absolute right-0 mt-2 bg-white rounded-lg shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 whitespace-nowrap"
+                  style={{ minWidth: '220px' }}
                 >
                   {/* Team switcher section */}
                   {availableTeams.length > 1 && (
