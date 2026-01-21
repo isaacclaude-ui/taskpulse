@@ -1020,14 +1020,14 @@ export default function AdminPage() {
 
                 {/* Members table */}
                 <div className="mt-4 overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full table-fixed">
                     <thead>
                       <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-2 text-sm font-medium text-gray-600">Name</th>
-                        <th className="text-left py-3 px-2 text-sm font-medium text-gray-600">Team</th>
-                        <th className="text-left py-3 px-2 text-sm font-medium text-gray-600">Login Email</th>
-                        <th className="text-left py-3 px-2 text-sm font-medium text-gray-600">Role</th>
-                        <th className="text-center py-3 px-2 text-sm font-medium text-gray-600">Actions</th>
+                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-600 w-[140px]">Name</th>
+                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-600 w-[200px]">Teams</th>
+                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Email</th>
+                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-600 w-[100px]">Role</th>
+                        <th className="text-center py-3 px-3 text-sm font-medium text-gray-600 w-[100px]">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -1037,9 +1037,12 @@ export default function AdminPage() {
                           if (memberTeamFilter === 'none') return !m.teamIds || m.teamIds.length === 0;
                           return m.teamIds?.includes(memberTeamFilter);
                         })
-                        .map((m) => (
+                        .map((m) => {
+                          const memberTeams = teams.filter(t => m.teamIds?.includes(t.id));
+                          return (
                         <tr key={m.id} className="hover:bg-gray-50">
-                          <td className="py-3 px-2">
+                          {/* Name column */}
+                          <td className="py-3 px-3">
                             {editingMemberId === m.id ? (
                               <div className="flex items-center gap-1">
                                 <input
@@ -1053,90 +1056,103 @@ export default function AdminPage() {
                                       setEditingMemberName('');
                                     }
                                   }}
-                                  className="input-field text-sm py-1 px-2 w-40"
+                                  className="input-field text-sm py-1 px-2 w-full"
                                   autoFocus
                                 />
-                                <button
-                                  onClick={() => handleUpdateMemberName(m.id)}
-                                  className="text-teal-600 hover:text-teal-700 p-1"
-                                  title="Save"
-                                >
+                                <button onClick={() => handleUpdateMemberName(m.id)} className="text-teal-600 hover:text-teal-700 p-1" title="Save">
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                   </svg>
                                 </button>
-                                <button
-                                  onClick={() => {
-                                    setEditingMemberId(null);
-                                    setEditingMemberName('');
-                                  }}
-                                  className="text-gray-400 hover:text-gray-600 p-1"
-                                  title="Cancel"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                  </svg>
-                                </button>
                               </div>
                             ) : (
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1.5">
                                 <button
-                                  onClick={() => {
-                                    setEditingMemberId(m.id);
-                                    setEditingMemberName(m.name);
-                                  }}
-                                  className={`font-medium hover:text-teal-600 hover:underline text-left ${
-                                    m.is_archived ? 'text-gray-400' : 'text-gray-900'
-                                  }`}
-                                  title="Click to edit name"
+                                  onClick={() => { setEditingMemberId(m.id); setEditingMemberName(m.name); }}
+                                  className={`font-medium hover:text-teal-600 text-left truncate ${m.is_archived ? 'text-gray-400' : 'text-gray-900'}`}
+                                  title={m.name}
                                 >
                                   {m.name}
                                 </button>
                                 {m.is_archived && (
-                                  <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
-                                    Archived
-                                  </span>
+                                  <span className="text-[9px] bg-amber-100 text-amber-700 px-1 py-0.5 rounded shrink-0">Arc</span>
                                 )}
                               </div>
                             )}
                           </td>
-                          <td className="py-3 px-2">
-                            <div className="flex flex-wrap gap-1">
-                              {teams.map(t => {
-                                const isInTeam = m.teamIds?.includes(t.id);
-                                return (
-                                  <button
-                                    key={t.id}
-                                    onClick={() => {
-                                      const newTeamIds = isInTeam
-                                        ? m.teamIds.filter((id: string) => id !== t.id)
-                                        : [...(m.teamIds || []), t.id];
-                                      handleUpdateMemberTeams(m.id, newTeamIds);
-                                    }}
-                                    className={`text-xs px-2 py-0.5 rounded transition-colors ${
-                                      isInTeam
-                                        ? 'bg-teal-100 text-teal-700 hover:bg-teal-200'
-                                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                                    }`}
-                                  >
-                                    {t.name}
-                                  </button>
-                                );
-                              })}
-                              {(!m.teamIds || m.teamIds.length === 0) && (
-                                <span className="text-xs text-gray-400 italic">No team</span>
-                              )}
+                          {/* Teams column - dropdown selector */}
+                          <td className="py-3 px-3">
+                            <div className="relative group">
+                              <div className="flex flex-wrap gap-1 min-h-[24px]">
+                                {memberTeams.length > 0 ? (
+                                  memberTeams.slice(0, 2).map(t => (
+                                    <span key={t.id} className="text-xs bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded truncate max-w-[80px]" title={t.name}>
+                                      {t.name}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="text-xs text-gray-400">None</span>
+                                )}
+                                {memberTeams.length > 2 && (
+                                  <span className="text-xs text-gray-500">+{memberTeams.length - 2}</span>
+                                )}
+                              </div>
+                              {/* Dropdown on hover */}
+                              <div className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all min-w-[160px]">
+                                <div className="text-xs text-gray-500 mb-1.5 font-medium">Assign to teams:</div>
+                                <div className="space-y-1 max-h-[150px] overflow-y-auto">
+                                  {teams.map(t => {
+                                    const isInTeam = m.teamIds?.includes(t.id);
+                                    return (
+                                      <label key={t.id} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-gray-50 p-1 rounded">
+                                        <input
+                                          type="checkbox"
+                                          checked={isInTeam}
+                                          onChange={() => {
+                                            const newTeamIds = isInTeam
+                                              ? m.teamIds.filter((id: string) => id !== t.id)
+                                              : [...(m.teamIds || []), t.id];
+                                            handleUpdateMemberTeams(m.id, newTeamIds);
+                                          }}
+                                          className="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                                        />
+                                        <span className={isInTeam ? 'text-teal-700 font-medium' : 'text-gray-600'}>{t.name}</span>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+                              </div>
                             </div>
                           </td>
-                          <td className="py-3 px-2">
+                          {/* Email column */}
+                          <td className="py-3 px-3">
                             {m.email ? (
-                              <div className="flex items-center gap-2">
-                                <span className="text-gray-600">{m.email}</span>
+                              <span className="text-sm text-gray-600 truncate block" title={m.email}>{m.email}</span>
+                            ) : (
+                              <span className="text-sm text-gray-400">—</span>
+                            )}
+                          </td>
+                          {/* Role column */}
+                          <td className="py-3 px-3">
+                            <select
+                              value={m.role}
+                              onChange={(e) => handleUpdateMemberRole(m.id, e.target.value)}
+                              className="text-xs border border-gray-200 rounded px-2 py-1 bg-white w-full"
+                            >
+                              <option value="user">Staff</option>
+                              <option value="lead">Lead</option>
+                              <option value="admin">Admin</option>
+                            </select>
+                          </td>
+                          {/* Actions column */}
+                          <td className="py-3 px-3">
+                            <div className="flex items-center justify-center gap-0.5">
+                              {m.email && (
                                 <button
                                   onClick={() => handleSendInvite(m.id, m.email, m.name)}
                                   disabled={sendingInvite === m.id}
-                                  className="text-teal-600 hover:text-teal-700 p-1 rounded hover:bg-teal-50 transition-colors disabled:opacity-50"
-                                  title="Send invite email"
+                                  className="text-gray-400 hover:text-teal-600 p-1 rounded hover:bg-teal-50 disabled:opacity-50"
+                                  title="Send invite"
                                 >
                                   {sendingInvite === m.id ? (
                                     <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -1145,54 +1161,25 @@ export default function AdminPage() {
                                     </svg>
                                   ) : (
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                     </svg>
                                   )}
                                 </button>
-                              </div>
-                            ) : (
-                              <span className="text-gray-400 italic">No login</span>
-                            )}
-                          </td>
-                          <td className="py-3 px-2">
-                            <select
-                              value={m.role}
-                              onChange={(e) => handleUpdateMemberRole(m.id, e.target.value)}
-                              className="text-sm border border-gray-200 rounded px-2 py-1 bg-white"
-                            >
-                              <option value="user">Staff</option>
-                              <option value="lead">Team Lead</option>
-                              <option value="admin">Admin</option>
-                            </select>
-                          </td>
-                          <td className="py-3 px-2 text-center">
-                            <div className="flex items-center justify-center gap-1">
+                              )}
                               {m.is_archived ? (
-                                <button
-                                  onClick={() => handleUnarchiveMember(m.id)}
-                                  className="text-amber-500 hover:text-amber-600 p-1"
-                                  title="Unarchive member"
-                                >
+                                <button onClick={() => handleUnarchiveMember(m.id)} className="text-amber-500 hover:text-amber-600 p-1" title="Restore">
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                   </svg>
                                 </button>
                               ) : (
-                                <button
-                                  onClick={() => handleArchiveMember(m.id)}
-                                  className="text-gray-400 hover:text-amber-600 p-1"
-                                  title="Archive member"
-                                >
+                                <button onClick={() => handleArchiveMember(m.id)} className="text-gray-400 hover:text-amber-600 p-1" title="Archive">
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
                                   </svg>
                                 </button>
                               )}
-                              <button
-                                onClick={() => handleDeleteMember(m.id)}
-                                className="text-gray-400 hover:text-red-600 p-1"
-                                title="Delete member"
-                              >
+                              <button onClick={() => handleDeleteMember(m.id)} className="text-gray-400 hover:text-red-600 p-1" title="Delete">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
@@ -1200,7 +1187,8 @@ export default function AdminPage() {
                             </div>
                           </td>
                         </tr>
-                      ))}
+                          );
+                        })}
                     </tbody>
                   </table>
                 </div>

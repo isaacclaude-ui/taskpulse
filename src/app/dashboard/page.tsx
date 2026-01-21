@@ -267,23 +267,10 @@ export default function DashboardPage() {
     }
   };
 
-  const handleTaskDuplicate = async (taskId: string) => {
-    try {
-      const res = await fetch(`/api/tasks/${taskId}/duplicate`, {
-        method: 'POST',
-      });
-
-      if (res.ok) {
-        // Reload dashboard to show the new duplicated task
-        loadDashboard();
-      } else {
-        const data = await res.json();
-        alert(data.error || 'Failed to duplicate pipeline');
-      }
-    } catch (error) {
-      console.error('Duplicate pipeline error:', error);
-      alert('Failed to duplicate pipeline');
-    }
+  const handleTaskDuplicate = (taskId: string) => {
+    // Navigate to add-log page with the task ID as a template
+    // This opens the editor with pre-filled data for user to review and modify
+    router.push(`/add-log?duplicateFrom=${taskId}`);
   };
 
   const handleTaskReopen = async (taskId: string) => {

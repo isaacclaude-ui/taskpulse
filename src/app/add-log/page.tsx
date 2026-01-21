@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import { useNav } from '@/context/NavContext';
 import type { ExtractedTaskData, Member, TaskRecurrence } from '@/types';
@@ -55,9 +55,14 @@ function formatRecurrence(rec: TaskRecurrence | null): string {
 
 export default function AddLogPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { teamId, team, member } = useNav();
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Track if we're loading from a duplicate
+  const [loadingDuplicate, setLoadingDuplicate] = useState(false);
+  const [duplicateSourceTitle, setDuplicateSourceTitle] = useState<string | null>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -95,14 +100,82 @@ export default function AddLogPage() {
     checkAuth();
   }, [router, teamId, member]);
 
+  // Handle duplicateFrom query parameter - load existing task as template
+  useEffect(() => {
+    const duplicateFromId = searchParams.get('duplicateFrom');
+    if (!duplicateFromId || !teamId) return;
+
+    async function loadDuplicateSource() {
+      setLoadingDuplicate(true);
+      try {
+        // Fetch the original task with its steps
+        const res = await fetch(`/api/tasks/${duplicateFromId}`);
+        if (!res.ok) throw new Error('Failed to load task');
+        const task = await res.json();
+
+        if (!task || !task.id) throw new Error('Task not found');
+
+        setDuplicateSourceTitle(task.title);
+
+        // Fetch team members for assignment dropdowns
+        const membersRes = await fetch(`/api/members?teamId=${teamId}`);
+        const membersData = await membersRes.json();
+        const teamMembersList = membersData.members || [];
+        setTeamMembers(teamMembersList);
+
+        // Convert task to ExtractedTaskData format
+        const extractedFromTask: ExtractedTaskData = {
+          title: `Copy of ${task.title}`,
+          deadline: null, // Clear deadline for fresh start
+          pipeline_steps: task.pipeline_steps.map((step: { name: string; assigned_to: string | null; mini_deadline: string | null; is_joint?: boolean; additional_assignees?: string[]; member?: { name: string } }) => ({
+            name: step.name,
+            assigned_to_name: step.member?.name || null,
+            mini_deadline: null, // Clear mini deadlines for fresh start
+            is_joint: step.is_joint || false,
+            additional_assignees: step.additional_assignees || [],
+          })),
+          recurrence: task.recurrence || undefined,
+        };
+
+        setExtractedData(extractedFromTask);
+        setRecurrence(task.recurrence || null);
+        setReadyToCreate(true);
+
+        // Set up confirmed assignments from existing task
+        const assignments: ConfirmedAssignment[] = task.pipeline_steps.map((step: { assigned_to: string | null; member?: { name: string } }, index: number) => ({
+          stepIndex: index,
+          memberId: step.assigned_to,
+          memberName: step.member?.name || '',
+          isConfirmed: !!step.assigned_to,
+          extractedName: step.member?.name || null,
+        }));
+        setConfirmedAssignments(assignments);
+
+        // Add a message explaining this is a duplicate
+        setMessages([
+          { role: 'assistant', content: `I've loaded "${task.title}" as a template. You can modify the title, steps, assignments, and deadlines before creating the new pipeline. Click "Confirm & Log" when ready, or chat with me to make changes.` }
+        ]);
+
+      } catch (err) {
+        console.error('Failed to load duplicate source:', err);
+        setError('Failed to load pipeline template');
+      }
+      setLoadingDuplicate(false);
+    }
+
+    loadDuplicateSource();
+  }, [searchParams, teamId]);
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Focus input on mount
+  // Focus input on mount (unless loading duplicate)
   useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+    if (!loadingDuplicate) {
+      inputRef.current?.focus();
+    }
+  }, [loadingDuplicate]);
 
   const sendMessage = async (userMessage?: string) => {
     const messageToSend = userMessage || input.trim();

@@ -17,9 +17,9 @@ interface MemberStats {
 }
 
 export default function DashboardSummary({ tasks, members }: DashboardSummaryProps) {
-  // Calculate stats for each member (only active members with valid names)
+  // Calculate stats for each member (only active members with valid non-empty names)
   const memberStats: MemberStats[] = members
-    .filter(member => member.name && !member.is_archived) // Exclude archived and nameless members
+    .filter(member => member.name && member.name.trim() && !member.is_archived) // Exclude archived and nameless members
     .map(member => {
       let done = 0;
       let now = 0;
