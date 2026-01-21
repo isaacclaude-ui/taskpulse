@@ -38,7 +38,7 @@ export async function GET(
     if (teamIds.length === 0 && member?.role === 'admin' && member?.business_id) {
       const { data: allTeams, error: allTeamsError } = await supabase
         .from('teams')
-        .select('id, name, business_id')
+        .select('id, name, business_id, logo_url')
         .eq('business_id', member.business_id);
 
       if (allTeamsError) {
@@ -56,7 +56,7 @@ export async function GET(
     // Fetch the actual team data
     const { data: teams, error: teamsError } = await supabase
       .from('teams')
-      .select('id, name, business_id')
+      .select('id, name, business_id, logo_url')
       .in('id', teamIds);
 
     if (teamsError) {
