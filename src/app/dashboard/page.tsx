@@ -144,7 +144,7 @@ export default function DashboardPage() {
               items.push({
                 id: `task-${task.id}`,
                 event_date: deadlineDate,
-                title: `📋 ${truncateText(task.title, TASK_NAME_LIMIT + STEP_NAME_LIMIT + 3)}`, // Full width for task-only
+                title: `Due: ${truncateText(task.title, TASK_NAME_LIMIT + STEP_NAME_LIMIT)}`,
                 color: '#dc2626', // Red for pipeline deadlines
                 source: 'task',
                 task_id: task.id,
@@ -157,12 +157,11 @@ export default function DashboardPage() {
             if (step.mini_deadline) {
               const stepDate = step.mini_deadline.split('T')[0];
               if (stepDate.startsWith(targetMonth)) {
-                const taskPart = truncateText(task.title, TASK_NAME_LIMIT);
-                const stepPart = truncateText(step.name, STEP_NAME_LIMIT);
+                const stepPart = truncateText(step.name, STEP_NAME_LIMIT + TASK_NAME_LIMIT);
                 items.push({
                   id: `step-${step.id}`,
                   event_date: stepDate,
-                  title: `📌 ${taskPart} - ${stepPart}`,
+                  title: `Due: ${stepPart}`,
                   color: '#fca5a5', // Faded red for step deadlines (red-300)
                   source: 'step',
                   task_id: task.id,
