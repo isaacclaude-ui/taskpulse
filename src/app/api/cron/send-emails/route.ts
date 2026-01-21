@@ -4,11 +4,12 @@ import { supabase } from '@/lib/supabase';
 // This endpoint is called by Vercel Cron daily at 8 AM UTC
 // Configure in vercel.json: { "crons": [{ "path": "/api/cron/send-emails", "schedule": "0 8 * * *" }] }
 export async function GET(request: NextRequest) {
-  // Verify cron secret for security
+  // Verify cron secret for security (required in production)
   const authHeader = request.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  // Reject if: no secret configured OR header doesn't match
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

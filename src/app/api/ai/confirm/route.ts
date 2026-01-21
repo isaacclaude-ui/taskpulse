@@ -17,8 +17,7 @@ export async function POST(request: NextRequest) {
 
     const { sessionId, teamId, createdBy, extractedData, memberAssignments, businessId } = body;
 
-    console.log('Received confirm request:', { teamId, createdBy, businessId, hasExtractedData: !!extractedData, memberAssignments });
-
+    
     if (!teamId || !extractedData) {
       return NextResponse.json(
         { error: 'Team ID and extracted data are required' },
@@ -35,8 +34,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Creating task with title:', data.title, 'steps:', data.pipeline_steps.length);
-
+    
     // Get business_id from team if not provided
     let actualBusinessId = businessId;
     if (!actualBusinessId) {
@@ -81,7 +79,6 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (!memberError && newMember) {
-        console.log('Auto-created member:', name, newMember.id);
         await supabase
           .from('member_teams')
           .insert({ member_id: newMember.id, team_id: teamId });
@@ -124,9 +121,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log('Step assignments after auto-create:', stepAssignments);
-    console.log('Additional assignees:', stepAdditionalAssignees);
-
     // Validate and format deadline
     let taskDeadline = null;
     if (data.deadline) {
@@ -161,7 +155,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Create pipeline steps
-    console.log('Building pipeline steps...');
     let steps;
     try {
       steps = data.pipeline_steps.map((step, index) => {
@@ -200,8 +193,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Inserting steps:', steps.length);
-    const { error: stepsError } = await supabase
+        const { error: stepsError } = await supabase
       .from('pipeline_steps')
       .insert(steps);
 
@@ -212,8 +204,7 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-    console.log('Steps created successfully');
-
+    
     // Get creator name for notifications
     let creatorName = 'Someone';
     if (createdBy) {
@@ -273,7 +264,6 @@ export async function POST(request: NextRequest) {
     // Send all notifications
     if (notificationsToSend.length > 0) {
       await supabase.from('notifications').insert(notificationsToSend);
-      console.log('Sent', notificationsToSend.length, 'assignment notifications');
     }
 
     // Link conversation to task (audit trail) instead of deleting
@@ -288,8 +278,7 @@ export async function POST(request: NextRequest) {
         .eq('session_id', sessionId);
     }
 
-    console.log('Task created successfully:', task.id);
-    return NextResponse.json({ success: true, taskId: task.id });
+        return NextResponse.json({ success: true, taskId: task.id });
   } catch (error: unknown) {
     console.error('AI confirm error:', error);
     console.error('Error type:', typeof error);

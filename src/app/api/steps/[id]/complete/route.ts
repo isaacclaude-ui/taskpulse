@@ -95,7 +95,7 @@ export async function POST(
           member_id: assigneeId,
           type: 'assignment',
           title: `Your turn: "${nextStep.name}"`,
-          content: `${completerName} completed the previous step. "${currentStep.task?.title || 'Task'}" is now waiting for you.`,
+          content: `${completerName} completed "${currentStep.name}". Your step is now unlocked.`,
           link_task_id: currentStep.task_id,
           link_step_id: nextStep.id,
           is_read: false,

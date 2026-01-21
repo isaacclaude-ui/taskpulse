@@ -26,6 +26,16 @@ export function NavProvider({ children }: { children: ReactNode }) {
   const [team, setTeam] = useState<Team | null>(null);
   const [member, setMember] = useState<MemberWithRole | null>(null);
 
+  // Safe JSON parse helper
+  const safeJsonParse = <T,>(json: string | null): T | null => {
+    if (!json) return null;
+    try {
+      return JSON.parse(json) as T;
+    } catch {
+      return null;
+    }
+  };
+
   // Load from localStorage on mount
   useEffect(() => {
     const storedBusinessId = localStorage.getItem('taskpulse_business_id');
@@ -36,9 +46,14 @@ export function NavProvider({ children }: { children: ReactNode }) {
 
     if (storedBusinessId) setBusinessId(storedBusinessId);
     if (storedTeamId) setTeamId(storedTeamId);
-    if (storedBusiness) setBusiness(JSON.parse(storedBusiness));
-    if (storedTeam) setTeam(JSON.parse(storedTeam));
-    if (storedMember) setMember(JSON.parse(storedMember));
+
+    const parsedBusiness = safeJsonParse<Business>(storedBusiness);
+    const parsedTeam = safeJsonParse<Team>(storedTeam);
+    const parsedMember = safeJsonParse<MemberWithRole>(storedMember);
+
+    if (parsedBusiness) setBusiness(parsedBusiness);
+    if (parsedTeam) setTeam(parsedTeam);
+    if (parsedMember) setMember(parsedMember);
   }, []);
 
   // Persist to localStorage

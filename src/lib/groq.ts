@@ -191,7 +191,6 @@ export async function processTaskChat(
   });
 
   const content = response.choices[0]?.message?.content || '{}';
-  console.log('AI Response:', content);
 
   let parsed;
   try {
@@ -261,12 +260,6 @@ export async function processTaskChat(
       status: s.status || 'pending',
     };
   });
-
-  console.log('Extracted names from AI:', normalizedSteps.map((s: { assigned_to_name: string | null; is_joint?: boolean; additional_assignee_names?: string[] }) =>
-    s.is_joint ? `${s.assigned_to_name} (joint: ${s.additional_assignee_names?.join(', ')})` : s.assigned_to_name
-  ));
-  console.log('Matched to team members:', matchedMembers);
-  console.log('Unmatched names (will be auto-created):', unmatchedNames);
 
   return {
     extracted_data: {
