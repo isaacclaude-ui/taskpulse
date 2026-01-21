@@ -355,7 +355,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="glass-bg min-h-screen flex flex-col">
+    <div className="glass-bg min-h-screen flex flex-col overflow-x-hidden">
       {/* Header */}
       <header className="header-banner">
         <div className="header-banner-content px-4 py-6">
