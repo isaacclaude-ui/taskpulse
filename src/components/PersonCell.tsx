@@ -103,7 +103,7 @@ export default function PersonCell({
     return (
       <div
         key={step.id}
-        className={`rounded p-2 relative overflow-hidden ${cardStyles[status]} ${status !== 'pending' ? 'cursor-pointer' : ''}`}
+        className={`rounded p-2 relative overflow-hidden group ${cardStyles[status]} ${status !== 'pending' ? 'cursor-pointer' : ''}`}
         onClick={status !== 'pending' ? () => onStepClick(step.id, taskId) : undefined}
       >
         {/* DONE watermark for completed steps */}
@@ -165,9 +165,9 @@ export default function PersonCell({
           </div>
         )}
 
-        {/* Action buttons - only for active step and current user or admin */}
+        {/* Action buttons - show on hover only for active step */}
         {status === 'active' && (isCurrentUser || isAdmin) && (
-          <div className="flex gap-1 mt-1.5 relative">
+          <div className="absolute bottom-0 left-0 right-0 flex gap-1 p-1.5 bg-gradient-to-t from-green-100 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-150">
             {!isFirst && !step.is_joint && (
               <button
                 className="flex-1 text-[9px] bg-gray-400 text-white px-1 py-0.5 rounded font-medium transition-all duration-150 ease-out hover:bg-gray-500 hover:scale-[1.03] active:scale-95"
