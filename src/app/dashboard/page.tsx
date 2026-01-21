@@ -11,6 +11,16 @@ import DashboardSummary from '@/components/DashboardSummary';
 import Footer from '@/components/Footer';
 import type { TaskWithSteps, Member, Team, Announcement, SharedLink, CalendarEvent, CalendarItem } from '@/types';
 
+// Calendar display limits
+const TASK_NAME_LIMIT = 12;
+const STEP_NAME_LIMIT = 15;
+
+// Helper to truncate text with ellipsis
+const truncateText = (text: string, limit: number): string => {
+  if (text.length <= limit) return text;
+  return text.substring(0, limit - 1) + '…';
+};
+
 export default function DashboardPage() {
   const router = useRouter();
   const { teamId, team, business, member, clear, setTeamId, setTeam } = useNav();
@@ -134,7 +144,7 @@ export default function DashboardPage() {
               items.push({
                 id: `task-${task.id}`,
                 event_date: deadlineDate,
-                title: `📋 ${task.title}`,
+                title: `📋 ${truncateText(task.title, TASK_NAME_LIMIT + STEP_NAME_LIMIT + 3)}`, // Full width for task-only
                 color: '#f59e0b', // Amber for task deadlines
                 source: 'task',
                 task_id: task.id,
@@ -147,10 +157,12 @@ export default function DashboardPage() {
             if (step.mini_deadline) {
               const stepDate = step.mini_deadline.split('T')[0];
               if (stepDate.startsWith(targetMonth)) {
+                const taskPart = truncateText(task.title, TASK_NAME_LIMIT);
+                const stepPart = truncateText(step.name, STEP_NAME_LIMIT);
                 items.push({
                   id: `step-${step.id}`,
                   event_date: stepDate,
-                  title: `📌 ${step.name}`,
+                  title: `📌 ${taskPart} - ${stepPart}`,
                   color: '#8b5cf6', // Purple for step deadlines
                   source: 'step',
                   task_id: task.id,
