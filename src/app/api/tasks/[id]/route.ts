@@ -175,6 +175,7 @@ export async function PATCH(
         description: extractedData.conclusion,
         conclusion: extractedData.conclusion,
         deadline: taskDeadline,
+        recurrence: extractedData.recurrence || null,
       })
       .eq('id', id);
 

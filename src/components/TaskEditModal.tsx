@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import type { TaskWithSteps, ExtractedTaskData, Member } from '@/types';
+import type { TaskWithSteps, ExtractedTaskData, Member, TaskRecurrence } from '@/types';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -34,6 +34,21 @@ function formatDate(dateStr: string | null | undefined): string {
   return date.toLocaleDateString();
 }
 
+// Helper to format recurrence for display
+function formatRecurrence(rec: TaskRecurrence | null): string {
+  if (!rec || !rec.enabled) return "Don't repeat";
+  const { type, interval } = rec;
+  if (interval === 1) {
+    if (type === 'daily') return 'Every day';
+    if (type === 'weekly') return 'Every week';
+    if (type === 'monthly') return 'Every month';
+  }
+  if (type === 'daily') return `Every ${interval} days`;
+  if (type === 'weekly') return `Every ${interval} weeks`;
+  if (type === 'monthly') return `Every ${interval} months`;
+  return "Don't repeat";
+}
+
 export default function TaskEditModal({
   task,
   isOpen,
@@ -58,6 +73,12 @@ export default function TaskEditModal({
   const [teamMembers, setTeamMembers] = useState<Member[]>([]);
   const [confirmedAssignments, setConfirmedAssignments] = useState<ConfirmedAssignment[]>([]);
 
+  // Recurrence state
+  const [recurrence, setRecurrence] = useState<TaskRecurrence | null>(null);
+  const [showCustomRecurrence, setShowCustomRecurrence] = useState(false);
+  const [customInterval, setCustomInterval] = useState(1);
+  const [customType, setCustomType] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
+
   // Initialize with current task data when modal opens
   useEffect(() => {
     if (isOpen && task) {
@@ -66,6 +87,7 @@ export default function TaskEditModal({
         title: task.title,
         conclusion: task.conclusion,
         deadline: task.deadline,
+        recurrence: task.recurrence,
         pipeline_steps: task.pipeline_steps.map(step => ({
           name: step.name,
           assigned_to_name: step.assigned_to_name || step.member?.name || undefined,
@@ -77,6 +99,9 @@ export default function TaskEditModal({
         confidence: 'high',
       };
       setExtractedData(initialData);
+
+      // Initialize recurrence from task
+      setRecurrence(task.recurrence || null);
 
       // Build matched members from existing assignments
       const matched = task.pipeline_steps
@@ -103,9 +128,12 @@ export default function TaskEditModal({
       fetchTeamMembers();
 
       // Start with an initial AI message
+      const recurrenceHint = task.recurrence?.enabled
+        ? `\n• "Make this monthly instead" or "Turn off recurrence"`
+        : `\n• "Make this repeat weekly"`;
       setMessages([{
         role: 'assistant',
-        content: `Current pipeline: "${task.title}" with ${task.pipeline_steps.length} steps. What would you like to change? You can say things like:\n• "Change Lisa's deadline to Feb 20th"\n• "John resigned, Isaac takes over"\n• "Mark step 1 as completed"\n• "Add a new step for review"`
+        content: `Current pipeline: "${task.title}" with ${task.pipeline_steps.length} steps. What would you like to change? You can say things like:\n• "Change Lisa's deadline to Feb 20th"\n• "John resigned, Isaac takes over"\n• "Mark step 1 as completed"\n• "Add a new step for review"${recurrenceHint}`
       }]);
 
       setInput('');
@@ -223,11 +251,17 @@ export default function TaskEditModal({
         return match?.member_id || null;
       });
 
+      // Include recurrence in extracted data
+      const dataWithRecurrence = {
+        ...extractedData,
+        recurrence: recurrence || undefined,
+      };
+
       const res = await fetch(`/api/tasks/${task.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          extractedData,
+          extractedData: dataWithRecurrence,
           memberAssignments,
         }),
       });
@@ -281,6 +315,91 @@ export default function TaskEditModal({
                   <p className="text-xs text-gray-500 mt-1">
                     Due: {formatDate(extractedData.deadline)}
                   </p>
+
+                  {/* Recurrence dropdown */}
+                  <div className="mt-2">
+                    <label className="text-[10px] text-gray-500 block mb-1">Repeat</label>
+                    {!showCustomRecurrence ? (
+                      <select
+                        value={recurrence ? `${recurrence.type}-${recurrence.interval}` : 'none'}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === 'none') {
+                            setRecurrence(null);
+                          } else if (val === 'custom') {
+                            setShowCustomRecurrence(true);
+                          } else {
+                            const [type, interval] = val.split('-');
+                            setRecurrence({
+                              type: type as 'daily' | 'weekly' | 'monthly',
+                              interval: parseInt(interval, 10),
+                              enabled: true,
+                            });
+                          }
+                        }}
+                        className="w-full text-xs p-1.5 rounded border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                      >
+                        <option value="none">Don&apos;t repeat</option>
+                        <option value="weekly-1">Every week</option>
+                        <option value="weekly-2">Every 2 weeks</option>
+                        <option value="monthly-1">Every month</option>
+                        <option value="daily-1">Every day</option>
+                        <option value="custom">Custom...</option>
+                      </select>
+                    ) : (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-gray-500">Every</span>
+                          <input
+                            type="number"
+                            min="1"
+                            max="365"
+                            value={customInterval}
+                            onChange={(e) => setCustomInterval(parseInt(e.target.value, 10) || 1)}
+                            className="w-14 text-xs p-1 rounded border border-gray-300 text-center"
+                          />
+                          <select
+                            value={customType}
+                            onChange={(e) => setCustomType(e.target.value as 'daily' | 'weekly' | 'monthly')}
+                            className="flex-1 text-xs p-1 rounded border border-gray-300"
+                          >
+                            <option value="daily">day(s)</option>
+                            <option value="weekly">week(s)</option>
+                            <option value="monthly">month(s)</option>
+                          </select>
+                        </div>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => {
+                              setRecurrence({
+                                type: customType,
+                                interval: customInterval,
+                                enabled: true,
+                              });
+                              setShowCustomRecurrence(false);
+                            }}
+                            className="flex-1 text-xs py-1 bg-teal-500 text-white rounded hover:bg-teal-600"
+                          >
+                            Apply
+                          </button>
+                          <button
+                            onClick={() => setShowCustomRecurrence(false)}
+                            className="flex-1 text-xs py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {recurrence && (
+                      <p className="text-[10px] text-teal-600 mt-1 flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        {formatRecurrence(recurrence)}
+                      </p>
+                    )}
+                  </div>
 
                   <div className="mt-3 space-y-2">
                     {extractedData.pipeline_steps.map((step, i) => {

@@ -57,6 +57,7 @@ ${existingTaskContext}
 | steps[].by_when | NO | YYYY-MM-DD | Deadline for this step |
 | steps[].status | AUTO | pending/completed | Track progress |
 | overall_deadline | NO | YYYY-MM-DD | Usually last step's date |
+| recurrence | NO | object | Repeat pattern (see below) |
 
 ## INTELLIGENCE RULES
 
@@ -87,6 +88,21 @@ ${existingTaskContext}
 
 5. **DATES:** Always YYYY-MM-DD. "Feb 5th" → "${year}-02-05"
 
+6. **RECURRENCE DETECTION:**
+   Extract repeat patterns into: {"type": "daily"|"weekly"|"monthly", "interval": number, "enabled": true}
+
+   Examples:
+   - "every week" → recurrence: {"type": "weekly", "interval": 1, "enabled": true}
+   - "every 2 weeks" → recurrence: {"type": "weekly", "interval": 2, "enabled": true}
+   - "weekly" → recurrence: {"type": "weekly", "interval": 1, "enabled": true}
+   - "every month" → recurrence: {"type": "monthly", "interval": 1, "enabled": true}
+   - "monthly" → recurrence: {"type": "monthly", "interval": 1, "enabled": true}
+   - "every 3 days" → recurrence: {"type": "daily", "interval": 3, "enabled": true}
+   - "daily" → recurrence: {"type": "daily", "interval": 1, "enabled": true}
+   - "biweekly" → recurrence: {"type": "weekly", "interval": 2, "enabled": true}
+
+   If no repeat pattern mentioned, omit recurrence field (don't include it)
+
 ## RESPONSE FORMAT (JSON)
 {
   "title": "Task title",
@@ -95,6 +111,7 @@ ${existingTaskContext}
     {"what": "Action", "who": "Person name or null", "who_alternatives": ["Name1", "Name2"] or null, "is_joint": true/false, "by_when": "YYYY-MM-DD or null", "status": "pending"}
   ],
   "overall_deadline": "YYYY-MM-DD or null",
+  "recurrence": {"type": "weekly", "interval": 1, "enabled": true} or null,
   "ai_message": "Brief response to user",
   "ready_to_create": true/false
 }
@@ -261,6 +278,15 @@ export async function processTaskChat(
     };
   });
 
+  // Extract recurrence if present
+  const recurrence = parsed.recurrence && parsed.recurrence.type && parsed.recurrence.enabled !== false
+    ? {
+        type: parsed.recurrence.type as 'daily' | 'weekly' | 'monthly',
+        interval: parsed.recurrence.interval || 1,
+        enabled: true,
+      }
+    : undefined;
+
   return {
     extracted_data: {
       title: parsed.title || 'Untitled Task',
@@ -268,6 +294,7 @@ export async function processTaskChat(
       conclusion: parsed.conclusion,
       actionables: parsed.actionables || [],
       deadline: taskDeadline,
+      recurrence,
       pipeline_steps: normalizedSteps,
       confidence: parsed.ready_to_create ? 'high' : 'medium',
     },

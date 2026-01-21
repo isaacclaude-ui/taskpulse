@@ -7,6 +7,16 @@ export type StepStatus = 'locked' | 'unlocked' | 'completed';
 // Task status
 export type TaskStatus = 'active' | 'completed';
 
+// Recurrence type
+export type RecurrenceType = 'daily' | 'weekly' | 'monthly';
+
+// Task recurrence pattern
+export interface TaskRecurrence {
+  type: RecurrenceType;
+  interval: number; // every X days/weeks/months
+  enabled: boolean;
+}
+
 // Business
 export interface Business {
   id: string;
@@ -64,6 +74,10 @@ export interface Task {
   created_by?: string;
   created_at: string;
   completed_at?: string;
+  // Recurrence fields
+  recurrence?: TaskRecurrence;
+  source_task_id?: string; // Links to original recurring task
+  recurrence_count?: number; // Which cycle (0=original, 1=first repeat, etc.)
 }
 
 // Pipeline Step
@@ -127,6 +141,7 @@ export interface ExtractedTaskData {
   conclusion?: string;
   actionables?: string[];
   deadline?: string;
+  recurrence?: TaskRecurrence; // Recurrence pattern extracted from AI
   pipeline_steps: {
     name: string;
     assigned_to_name?: string;

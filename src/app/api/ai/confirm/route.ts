@@ -142,6 +142,10 @@ export async function POST(request: NextRequest) {
         deadline: taskDeadline,
         status: 'active',
         created_by: createdBy || null,
+        // Recurrence fields
+        recurrence: data.recurrence || null,
+        source_task_id: null,
+        recurrence_count: 0,
       })
       .select()
       .single();

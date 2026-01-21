@@ -1,5 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import type { TaskRecurrence } from '@/types';
+
+// Calculate next deadline based on recurrence pattern
+function calculateNextDeadline(currentDeadline: string, recurrence: TaskRecurrence): string {
+  const date = new Date(currentDeadline);
+
+  switch (recurrence.type) {
+    case 'daily':
+      date.setDate(date.getDate() + recurrence.interval);
+      break;
+    case 'weekly':
+      date.setDate(date.getDate() + (7 * recurrence.interval));
+      break;
+    case 'monthly':
+      date.setMonth(date.getMonth() + recurrence.interval);
+      break;
+  }
+
+  return date.toISOString().split('T')[0];
+}
+
+// Calculate step's mini deadline based on offset from original task deadline
+function calculateStepDeadline(
+  originalStepDeadline: string | null,
+  originalTaskDeadline: string | null,
+  newTaskDeadline: string
+): string | null {
+  if (!originalStepDeadline || !originalTaskDeadline) return null;
+
+  const stepDate = new Date(originalStepDeadline);
+  const taskDate = new Date(originalTaskDeadline);
+  const newTaskDate = new Date(newTaskDeadline);
+
+  // Calculate offset in days
+  const offsetMs = stepDate.getTime() - taskDate.getTime();
+
+  // Apply same offset to new task deadline
+  const newStepDate = new Date(newTaskDate.getTime() + offsetMs);
+  return newStepDate.toISOString().split('T')[0];
+}
 
 export async function POST(
   request: NextRequest,
@@ -124,6 +164,92 @@ export async function POST(
           is_read: false,
           created_by: memberId,
         });
+      }
+
+      // Check if this is a recurring task and create next cycle
+      const { data: completedTask } = await supabase
+        .from('tasks')
+        .select('*, pipeline_steps:pipeline_steps(*)')
+        .eq('id', currentStep.task_id)
+        .single();
+
+      if (completedTask?.recurrence?.enabled) {
+        const recurrence = completedTask.recurrence as TaskRecurrence;
+
+        // Calculate next deadline
+        const currentDeadline = completedTask.deadline || new Date().toISOString().split('T')[0];
+        const nextDeadline = calculateNextDeadline(currentDeadline, recurrence);
+
+        // Create new task for next cycle
+        const { data: newTask, error: newTaskError } = await supabase
+          .from('tasks')
+          .insert({
+            team_id: completedTask.team_id,
+            title: completedTask.title,
+            description: completedTask.description,
+            conclusion: completedTask.conclusion,
+            actionables: completedTask.actionables,
+            deadline: nextDeadline,
+            status: 'active',
+            created_by: completedTask.created_by,
+            recurrence: completedTask.recurrence,
+            source_task_id: completedTask.source_task_id || completedTask.id,
+            recurrence_count: (completedTask.recurrence_count || 0) + 1,
+          })
+          .select()
+          .single();
+
+        if (!newTaskError && newTask) {
+          // Clone pipeline steps with reset status
+          const steps = completedTask.pipeline_steps || [];
+          const newSteps = steps.map((step: { step_order: number; name: string; assigned_to: string | null; assigned_to_name: string | null; additional_assignees: string[] | null; additional_assignee_names: string[] | null; is_joint: boolean | null; mini_deadline: string | null }, index: number) => ({
+            task_id: newTask.id,
+            step_order: step.step_order,
+            name: step.name,
+            assigned_to: step.assigned_to,
+            assigned_to_name: step.assigned_to_name,
+            additional_assignees: step.additional_assignees || [],
+            additional_assignee_names: step.additional_assignee_names || [],
+            is_joint: step.is_joint || false,
+            mini_deadline: calculateStepDeadline(step.mini_deadline, completedTask.deadline, nextDeadline),
+            status: index === 0 ? 'unlocked' : 'locked',
+          }));
+
+          await supabase.from('pipeline_steps').insert(newSteps);
+
+          // Notify first step assignee about the new cycle
+          const firstStep = newSteps[0];
+          if (firstStep?.assigned_to) {
+            await supabase.from('notifications').insert({
+              member_id: firstStep.assigned_to,
+              type: 'assignment',
+              title: `New cycle: "${newTask.title}"`,
+              content: `Recurring task has started a new cycle (${newTask.recurrence_count + 1}). Your step "${firstStep.name}" is ready.`,
+              link_task_id: newTask.id,
+              is_read: false,
+              created_by: completedTask.created_by,
+            });
+          }
+
+          // Also notify additional assignees for joint first steps
+          if (firstStep?.is_joint && firstStep?.additional_assignees) {
+            const additionalNotifications = firstStep.additional_assignees
+              .filter((id: string) => id !== firstStep.assigned_to)
+              .map((assigneeId: string) => ({
+                member_id: assigneeId,
+                type: 'assignment',
+                title: `New cycle: "${newTask.title}"`,
+                content: `Recurring task has started a new cycle (${newTask.recurrence_count + 1}). Your shared step "${firstStep.name}" is ready.`,
+                link_task_id: newTask.id,
+                is_read: false,
+                created_by: completedTask.created_by,
+              }));
+
+            if (additionalNotifications.length > 0) {
+              await supabase.from('notifications').insert(additionalNotifications);
+            }
+          }
+        }
       }
     }
 
