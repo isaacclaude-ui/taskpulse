@@ -200,12 +200,22 @@ export default function TaskRow({
                 </svg>
               </div>
             )}
-            {/* AI-generated workflow summary */}
-            {task.description && (
-              <p className="text-[10px] text-gray-400 mt-1 line-clamp-2" title={task.description}>
-                {task.description}
-              </p>
-            )}
+            {/* AI-generated workflow summary - clickable to open AI editor */}
+            <div
+              className="mt-1 cursor-pointer hover:bg-teal-50 -mx-1 px-1 rounded transition-colors group/desc"
+              onClick={() => onTaskEdit(task.id)}
+              title="Click to edit with AI"
+            >
+              {task.description ? (
+                <p className="text-[10px] text-gray-400 line-clamp-2 group-hover/desc:text-teal-600">
+                  {task.description}
+                </p>
+              ) : (
+                <p className="text-[10px] text-gray-400 group-hover/desc:text-teal-600">
+                  + Edit with AI
+                </p>
+              )}
+            </div>
           </div>
           {/* Action buttons */}
           <div className="flex-shrink-0 flex items-center gap-1">
