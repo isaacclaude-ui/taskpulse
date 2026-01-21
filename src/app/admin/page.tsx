@@ -8,14 +8,33 @@ import type { Team, Member, PendingUser, Announcement, SharedLink, CalendarEvent
 
 type Tab = 'members' | 'teams' | 'pending' | 'emails' | 'content' | 'settings';
 
-// Preset colors for calendar events
+// Preset colors for calendar events (full standard palette)
 const EVENT_COLORS = [
-  { name: 'Teal', value: '#0d9488' },
-  { name: 'Blue', value: '#2563eb' },
-  { name: 'Purple', value: '#7c3aed' },
-  { name: 'Pink', value: '#db2777' },
+  // Row 1: Warm colors
+  { name: 'Red', value: '#dc2626' },
   { name: 'Orange', value: '#ea580c' },
+  { name: 'Amber', value: '#d97706' },
+  { name: 'Yellow', value: '#ca8a04' },
+  // Row 2: Greens
+  { name: 'Lime', value: '#65a30d' },
   { name: 'Green', value: '#16a34a' },
+  { name: 'Emerald', value: '#059669' },
+  { name: 'Teal', value: '#0d9488' },
+  // Row 3: Blues
+  { name: 'Cyan', value: '#0891b2' },
+  { name: 'Sky', value: '#0284c7' },
+  { name: 'Blue', value: '#2563eb' },
+  { name: 'Indigo', value: '#4f46e5' },
+  // Row 4: Purples & Pinks
+  { name: 'Violet', value: '#7c3aed' },
+  { name: 'Purple', value: '#9333ea' },
+  { name: 'Fuchsia', value: '#c026d3' },
+  { name: 'Pink', value: '#db2777' },
+  // Row 5: Neutrals
+  { name: 'Rose', value: '#e11d48' },
+  { name: 'Slate', value: '#475569' },
+  { name: 'Gray', value: '#6b7280' },
+  { name: 'Stone', value: '#78716c' },
 ];
 
 interface MemberWithTeams extends Member {
@@ -1442,16 +1461,16 @@ export default function AdminPage() {
                         />
                         <div>
                           <label className="text-xs text-gray-500 block mb-1">Color:</label>
-                          <div className="flex gap-1.5">
+                          <div className="grid grid-cols-10 gap-1">
                             {EVENT_COLORS.map((color) => (
                               <button
                                 key={color.value}
                                 type="button"
                                 onClick={() => setNewEventColor(color.value)}
-                                className={`w-6 h-6 rounded-full transition-all ${
+                                className={`w-5 h-5 rounded-full transition-all ${
                                   newEventColor === color.value
                                     ? 'ring-2 ring-offset-1 ring-gray-400 scale-110'
-                                    : 'hover:scale-110'
+                                    : 'hover:scale-105'
                                 }`}
                                 style={{ backgroundColor: color.value }}
                                 title={color.name}
@@ -1493,16 +1512,16 @@ export default function AdminPage() {
                                   />
                                   <div>
                                     <label className="text-xs text-gray-500 block mb-1">Color:</label>
-                                    <div className="flex gap-1.5">
+                                    <div className="grid grid-cols-10 gap-1">
                                       {EVENT_COLORS.map((color) => (
                                         <button
                                           key={color.value}
                                           type="button"
                                           onClick={() => setEditingEventColor(color.value)}
-                                          className={`w-5 h-5 rounded-full transition-all ${
+                                          className={`w-4 h-4 rounded-full transition-all ${
                                             editingEventColor === color.value
                                               ? 'ring-2 ring-offset-1 ring-gray-400 scale-110'
-                                              : 'hover:scale-110'
+                                              : 'hover:scale-105'
                                           }`}
                                           style={{ backgroundColor: color.value }}
                                           title={color.name}
