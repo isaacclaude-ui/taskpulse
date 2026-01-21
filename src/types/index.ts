@@ -254,3 +254,14 @@ export interface CalendarEvent {
   created_at: string;
   member?: Member;
 }
+
+// Unified calendar item (manual events + auto deadlines)
+export interface CalendarItem {
+  id: string;
+  event_date: string;
+  title: string;
+  color: string;
+  source: 'manual' | 'task' | 'step';
+  task_id?: string;
+  step_id?: string;
+}

@@ -9,7 +9,7 @@ import StepDetailModal from '@/components/StepDetailModal';
 import TaskEditModal from '@/components/TaskEditModal';
 import DashboardSummary from '@/components/DashboardSummary';
 import Footer from '@/components/Footer';
-import type { TaskWithSteps, Member, Team, Announcement, SharedLink, CalendarEvent } from '@/types';
+import type { TaskWithSteps, Member, Team, Announcement, SharedLink, CalendarEvent, CalendarItem } from '@/types';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -35,6 +35,7 @@ export default function DashboardPage() {
 
   // Calendar state
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [calendarItems, setCalendarItems] = useState<CalendarItem[]>([]);
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
@@ -107,7 +108,60 @@ export default function DashboardPage() {
       const res = await fetch(`/api/calendar-events?teamId=${teamId}&month=${targetMonth}`);
       if (res.ok) {
         const data = await res.json();
-        setCalendarEvents(data.events || []);
+        const manualEvents = data.events || [];
+        setCalendarEvents(manualEvents);
+
+        // Merge manual events with auto deadlines from tasks
+        const items: CalendarItem[] = [];
+
+        // Add manual events
+        manualEvents.forEach((e: CalendarEvent) => {
+          items.push({
+            id: e.id,
+            event_date: e.event_date,
+            title: e.title,
+            color: e.color || '#0d9488',
+            source: 'manual',
+          });
+        });
+
+        // Add task deadlines and step mini-deadlines from loaded tasks
+        tasks.forEach(task => {
+          // Task deadline
+          if (task.deadline) {
+            const deadlineDate = task.deadline.split('T')[0];
+            if (deadlineDate.startsWith(targetMonth)) {
+              items.push({
+                id: `task-${task.id}`,
+                event_date: deadlineDate,
+                title: `📋 ${task.title}`,
+                color: '#f59e0b', // Amber for task deadlines
+                source: 'task',
+                task_id: task.id,
+              });
+            }
+          }
+
+          // Step mini-deadlines
+          task.pipeline_steps?.forEach(step => {
+            if (step.mini_deadline) {
+              const stepDate = step.mini_deadline.split('T')[0];
+              if (stepDate.startsWith(targetMonth)) {
+                items.push({
+                  id: `step-${step.id}`,
+                  event_date: stepDate,
+                  title: `📌 ${step.name}`,
+                  color: '#8b5cf6', // Purple for step deadlines
+                  source: 'step',
+                  task_id: task.id,
+                  step_id: step.id,
+                });
+              }
+            }
+          });
+        });
+
+        setCalendarItems(items);
       }
     } catch (error) {
       console.error('Failed to load calendar events:', error);
@@ -124,6 +178,13 @@ export default function DashboardPage() {
       loadDashboard();
     }
   }, [filter, teamId]);
+
+  // Refresh calendar items when tasks change (to include auto deadlines)
+  useEffect(() => {
+    if (tasks.length > 0) {
+      loadCalendarEvents(calendarMonth);
+    }
+  }, [tasks]);
 
   const loadDashboard = async () => {
     if (!teamId || !member) return;
@@ -569,7 +630,7 @@ export default function DashboardPage() {
                   // Days of the month
                   for (let day = 1; day <= daysInMonth; day++) {
                     const dateStr = `${calendarMonth}-${day.toString().padStart(2, '0')}`;
-                    const dayEvents = calendarEvents.filter(e => e.event_date === dateStr);
+                    const dayEvents = calendarItems.filter(e => e.event_date === dateStr);
                     const isToday = isCurrentMonth && today.getDate() === day;
                     const isSelected = selectedDate === dateStr;
 
@@ -584,25 +645,46 @@ export default function DashboardPage() {
                         }`}
                       >
                         <span className="text-[9px]">{day}</span>
-                        {dayEvents.length > 0 && (
-                          <div className="w-full px-0.5 mt-0.5 space-y-0.5 overflow-hidden">
-                            {dayEvents.slice(0, 2).map((event, idx) => (
-                              <div
-                                key={idx}
-                                className="text-[8px] leading-tight truncate px-0.5 rounded"
-                                style={{ backgroundColor: event.color, color: 'white' }}
-                                title={event.title}
-                              >
-                                {event.title}
-                              </div>
-                            ))}
-                            {dayEvents.length > 2 && (
-                              <div className="text-[8px] text-slate-400 text-center">
-                                +{dayEvents.length - 2}
-                              </div>
-                            )}
-                          </div>
-                        )}
+                        {dayEvents.length > 0 && (() => {
+                          const manualEvents = dayEvents.filter(e => e.source === 'manual');
+                          const autoEvents = dayEvents.filter(e => e.source !== 'manual');
+                          return (
+                            <div className="w-full px-0.5 mt-0.5 space-y-0.5 overflow-hidden">
+                              {/* Manual events show with title */}
+                              {manualEvents.slice(0, 2).map((event, idx) => (
+                                <div
+                                  key={idx}
+                                  className="text-[8px] leading-tight truncate px-0.5 rounded"
+                                  style={{ backgroundColor: event.color, color: 'white' }}
+                                  title={event.title}
+                                >
+                                  {event.title}
+                                </div>
+                              ))}
+                              {/* Auto deadlines show as colored dots */}
+                              {autoEvents.length > 0 && (
+                                <div className="flex gap-0.5 justify-center mt-0.5">
+                                  {autoEvents.slice(0, 4).map((event, idx) => (
+                                    <div
+                                      key={`auto-${idx}`}
+                                      className="w-1.5 h-1.5 rounded-full"
+                                      style={{ backgroundColor: event.color }}
+                                      title={event.title}
+                                    />
+                                  ))}
+                                  {autoEvents.length > 4 && (
+                                    <span className="text-[7px] text-slate-400">+{autoEvents.length - 4}</span>
+                                  )}
+                                </div>
+                              )}
+                              {manualEvents.length > 2 && (
+                                <div className="text-[8px] text-slate-400 text-center">
+                                  +{manualEvents.length - 2}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </button>
                     );
                   }
@@ -617,14 +699,19 @@ export default function DashboardPage() {
                 <div className="text-xs font-medium text-slate-600 mb-1">
                   {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                 </div>
-                <div className="space-y-1 max-h-20 overflow-y-auto">
-                  {calendarEvents.filter(e => e.event_date === selectedDate).length === 0 ? (
+                <div className="space-y-1 max-h-24 overflow-y-auto">
+                  {calendarItems.filter(e => e.event_date === selectedDate).length === 0 ? (
                     <p className="text-xs text-slate-400">No events</p>
                   ) : (
-                    calendarEvents.filter(e => e.event_date === selectedDate).map((event) => (
-                      <div key={event.id} className="flex items-center gap-1.5 text-xs">
+                    calendarItems.filter(e => e.event_date === selectedDate).map((event) => (
+                      <div key={event.id} className="flex items-center gap-1.5 text-xs group">
                         <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: event.color }} />
-                        <span className="text-slate-700 truncate">{event.title}</span>
+                        <span className="text-slate-700 truncate flex-1">{event.title}</span>
+                        {event.source !== 'manual' && (
+                          <span className="text-[9px] text-slate-400 opacity-0 group-hover:opacity-100">
+                            {event.source === 'task' ? 'deadline' : 'due'}
+                          </span>
+                        )}
                       </div>
                     ))
                   )}
