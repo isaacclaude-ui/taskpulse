@@ -1,10 +1,19 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import { useNav } from '@/context/NavContext';
 import type { ExtractedTaskData, Member, TaskRecurrence } from '@/types';
+
+// Wrapper component to handle Suspense requirement for useSearchParams
+export default function AddLogPage() {
+  return (
+    <Suspense fallback={<div className="h-screen flex items-center justify-center"><div className="spinner" /></div>}>
+      <AddLogPageContent />
+    </Suspense>
+  );
+}
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -53,7 +62,7 @@ function formatRecurrence(rec: TaskRecurrence | null): string {
   return "Don't repeat";
 }
 
-export default function AddLogPage() {
+function AddLogPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { teamId, team, member } = useNav();
@@ -126,15 +135,15 @@ export default function AddLogPage() {
         // Convert task to ExtractedTaskData format
         const extractedFromTask: ExtractedTaskData = {
           title: `Copy of ${task.title}`,
-          deadline: null, // Clear deadline for fresh start
+          deadline: undefined, // Clear deadline for fresh start
           pipeline_steps: task.pipeline_steps.map((step: { name: string; assigned_to: string | null; mini_deadline: string | null; is_joint?: boolean; additional_assignees?: string[]; member?: { name: string } }) => ({
             name: step.name,
-            assigned_to_name: step.member?.name || null,
-            mini_deadline: null, // Clear mini deadlines for fresh start
+            assigned_to_name: step.member?.name || undefined,
+            mini_deadline: undefined, // Clear mini deadlines for fresh start
             is_joint: step.is_joint || false,
-            additional_assignees: step.additional_assignees || [],
           })),
           recurrence: task.recurrence || undefined,
+          confidence: 'high', // Pre-filled from existing task
         };
 
         setExtractedData(extractedFromTask);

@@ -97,7 +97,7 @@ export default function StepDetailModal({
       setEditingDeadline(false);
       return;
     }
-    const newDeadline = deadlineValue || null;
+    const newDeadline = deadlineValue || undefined;
     if (newDeadline === step.mini_deadline) {
       setEditingDeadline(false);
       return;
@@ -106,7 +106,7 @@ export default function StepDetailModal({
       const res = await fetch(`/api/steps/${stepId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mini_deadline: newDeadline }),
+        body: JSON.stringify({ mini_deadline: newDeadline || null }),
       });
       if (!res.ok) throw new Error('Failed to update');
       setStep({ ...step, mini_deadline: newDeadline });

@@ -298,7 +298,6 @@ export default function TaskRow({
               onStepComplete={onStepComplete}
               onStepReturn={onStepReturn}
               onStepClaim={onStepClaim}
-              onStepUpdate={onStepUpdate}
               isCurrentUser={currentMemberId === member.id}
               isAdmin={isAdmin}
             />

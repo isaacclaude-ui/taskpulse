@@ -301,8 +301,11 @@ export default function DashboardPage() {
       });
 
       if (res.ok) {
-        // Update local state without full reload
-        setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...updates } : t));
+        // Update local state without full reload (convert null to undefined for type safety)
+        const safeUpdates: { title?: string; deadline?: string } = {};
+        if (updates.title !== undefined) safeUpdates.title = updates.title;
+        if (updates.deadline !== undefined) safeUpdates.deadline = updates.deadline || undefined;
+        setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...safeUpdates } : t));
       } else {
         console.error('Failed to update task');
       }
