@@ -73,6 +73,10 @@ export default function AdminPage() {
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
   const [editingTeamName, setEditingTeamName] = useState('');
 
+  // Member name editing
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
+  const [editingMemberName, setEditingMemberName] = useState('');
+
   // Email settings
   interface EmailMember {
     id: string;
@@ -221,6 +225,22 @@ export default function AdminPage() {
       loadData();
     } catch (error) {
       console.error('Failed to update role:', error);
+    }
+  };
+
+  const handleUpdateMemberName = async (memberId: string) => {
+    if (!editingMemberName.trim()) return;
+    try {
+      await fetch(`/api/members/${memberId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editingMemberName.trim() }),
+      });
+      setEditingMemberId(null);
+      setEditingMemberName('');
+      loadData();
+    } catch (error) {
+      console.error('Failed to update member name:', error);
     }
   };
 
@@ -817,7 +837,56 @@ export default function AdminPage() {
                       {members.map((m) => (
                         <tr key={m.id} className="hover:bg-gray-50">
                           <td className="py-3 px-2">
-                            <span className="font-medium text-gray-900">{m.name}</span>
+                            {editingMemberId === m.id ? (
+                              <div className="flex items-center gap-1">
+                                <input
+                                  type="text"
+                                  value={editingMemberName}
+                                  onChange={(e) => setEditingMemberName(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleUpdateMemberName(m.id);
+                                    if (e.key === 'Escape') {
+                                      setEditingMemberId(null);
+                                      setEditingMemberName('');
+                                    }
+                                  }}
+                                  className="input-field text-sm py-1 px-2 w-40"
+                                  autoFocus
+                                />
+                                <button
+                                  onClick={() => handleUpdateMemberName(m.id)}
+                                  className="text-teal-600 hover:text-teal-700 p-1"
+                                  title="Save"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEditingMemberId(null);
+                                    setEditingMemberName('');
+                                  }}
+                                  className="text-gray-400 hover:text-gray-600 p-1"
+                                  title="Cancel"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setEditingMemberId(m.id);
+                                  setEditingMemberName(m.name);
+                                }}
+                                className="font-medium text-gray-900 hover:text-teal-600 hover:underline text-left"
+                                title="Click to edit name"
+                              >
+                                {m.name}
+                              </button>
+                            )}
                           </td>
                           <td className="py-3 px-2">
                             <div className="flex flex-wrap gap-1">
