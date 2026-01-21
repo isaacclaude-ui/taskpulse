@@ -11,9 +11,9 @@ import DashboardSummary from '@/components/DashboardSummary';
 import Footer from '@/components/Footer';
 import type { TaskWithSteps, Member, Team, Announcement, SharedLink, CalendarEvent, CalendarItem } from '@/types';
 
-// Calendar display limits
-const TASK_NAME_LIMIT = 12;
-const STEP_NAME_LIMIT = 15;
+// Calendar display limits - generous to fill space, CSS handles overflow
+const TASK_NAME_LIMIT = 30;
+const STEP_NAME_LIMIT = 25;
 
 // Helper to truncate text with ellipsis
 const truncateText = (text: string, limit: number): string => {
