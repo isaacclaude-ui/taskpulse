@@ -128,7 +128,7 @@ export default function PersonCell({
           <span
             className={`text-xs font-medium truncate ${
               status === 'completed' ? 'text-gray-600' :
-              status === 'active' ? 'text-gray-900' :
+              status === 'active' ? 'text-green-700' :
               'text-blue-700'
             }`}
             title={step.name}
