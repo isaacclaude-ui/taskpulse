@@ -12,6 +12,7 @@ interface PipelineGridProps {
   onStepClaim?: (stepId: string) => void;
   onTaskEdit: (taskId: string) => void;
   onTaskDelete: (taskId: string) => void;
+  onTaskDuplicate?: (taskId: string) => void;
   onTaskReopen?: (taskId: string) => void;
   currentMemberId?: string;
   isAdmin?: boolean;
@@ -27,6 +28,7 @@ export default function PipelineGrid({
   onStepClaim,
   onTaskEdit,
   onTaskDelete,
+  onTaskDuplicate,
   onTaskReopen,
   currentMemberId,
   isAdmin = false,
@@ -130,6 +132,7 @@ export default function PipelineGrid({
                 onStepClaim={onStepClaim}
                 onTaskEdit={onTaskEdit}
                 onTaskDelete={onTaskDelete}
+                onTaskDuplicate={onTaskDuplicate}
                 onTaskReopen={onTaskReopen}
                 currentMemberId={currentMemberId}
                 isAdmin={isAdmin}

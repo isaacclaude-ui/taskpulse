@@ -267,6 +267,25 @@ export default function DashboardPage() {
     }
   };
 
+  const handleTaskDuplicate = async (taskId: string) => {
+    try {
+      const res = await fetch(`/api/tasks/${taskId}/duplicate`, {
+        method: 'POST',
+      });
+
+      if (res.ok) {
+        // Reload dashboard to show the new duplicated task
+        loadDashboard();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to duplicate pipeline');
+      }
+    } catch (error) {
+      console.error('Duplicate pipeline error:', error);
+      alert('Failed to duplicate pipeline');
+    }
+  };
+
   const handleTaskReopen = async (taskId: string) => {
     try {
       const res = await fetch(`/api/tasks/${taskId}/reopen`, {
@@ -831,6 +850,7 @@ export default function DashboardPage() {
             onStepClaim={handleStepClaim}
             onTaskEdit={handleTaskEdit}
             onTaskDelete={handleTaskDelete}
+            onTaskDuplicate={handleTaskDuplicate}
             onTaskReopen={handleTaskReopen}
             currentMemberId={member?.id}
             isAdmin={member?.role === 'admin'}
