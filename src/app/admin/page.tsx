@@ -490,7 +490,7 @@ export default function AdminPage() {
 
       <main className="max-w-5xl mx-auto px-4 py-6">
         {/* Tabs */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex flex-wrap gap-2 mb-6">
           <button
             onClick={() => setActiveTab('pending')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
