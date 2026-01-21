@@ -80,11 +80,11 @@ export default function PersonCell({
     const { prevStep, nextStep, isFirst, isLast } = getStepContext(step);
 
     // Color scheme: Done=grey, Now=green, Coming Soon=blue
-    // All cards have pb-5 for consistent height (active uses it for buttons)
+    // Non-active cards have extra padding to match active card height (which has buttons)
     const cardStyles = {
-      completed: 'bg-gray-100 border border-gray-300 pb-5',
-      active: 'bg-green-50 border border-green-400 pb-5',
-      pending: 'bg-blue-50/50 border border-blue-200 opacity-70 pb-5',
+      completed: 'bg-gray-100 border border-gray-300 pb-6',
+      active: 'bg-green-50 border border-green-400',
+      pending: 'bg-blue-50/50 border border-blue-200 opacity-70 pb-6',
     };
 
     const statusIcon = {
@@ -166,9 +166,9 @@ export default function PersonCell({
           </div>
         )}
 
-        {/* Action buttons - absolute overlay, doesn't affect card height */}
+        {/* Action buttons - always visible for active step */}
         {status === 'active' && (isCurrentUser || isAdmin) && (
-          <div className="absolute bottom-1 left-1 right-1 flex gap-1">
+          <div className="flex gap-1 mt-1.5">
             {!isFirst && !step.is_joint && (
               <button
                 className="flex-1 text-[9px] bg-gray-400 text-white px-1 py-0.5 rounded font-medium transition-all duration-150 ease-out hover:bg-gray-500 hover:scale-[1.03] active:scale-95"
