@@ -141,7 +141,7 @@ export default function PersonCell({
         {step.mini_deadline && (
           <div className={`text-[10px] mt-0.5 ml-4 relative ${
             status === 'completed' ? 'text-gray-600' :
-            status === 'active' ? 'text-green-600 font-medium' :
+            status === 'active' ? 'text-green-600' :
             'text-blue-500'
           }`}>
             Due: {new Date(step.mini_deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
