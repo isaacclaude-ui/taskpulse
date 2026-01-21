@@ -173,6 +173,18 @@ export default function DashboardPage() {
           });
         });
 
+        // Sort: step deadlines first, then pipeline (task) deadlines
+        // This way pipeline deadline appears below/after step deadlines
+        items.sort((a, b) => {
+          // First sort by date
+          if (a.event_date !== b.event_date) {
+            return a.event_date.localeCompare(b.event_date);
+          }
+          // Same date: manual events first, then steps, then tasks (pipeline deadline last)
+          const sourceOrder = { manual: 0, step: 1, task: 2 };
+          return sourceOrder[a.source] - sourceOrder[b.source];
+        });
+
         setCalendarItems(items);
       }
     } catch (error) {
