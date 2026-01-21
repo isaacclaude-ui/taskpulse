@@ -14,27 +14,26 @@ const EVENT_COLORS = [
   { name: 'Red', value: '#dc2626' },
   { name: 'Orange', value: '#ea580c' },
   { name: 'Amber', value: '#d97706' },
-  { name: 'Yellow', value: '#ca8a04' },
-  // Row 2: Greens
-  { name: 'Lime', value: '#65a30d' },
-  { name: 'Green', value: '#16a34a' },
-  { name: 'Emerald', value: '#059669' },
-  { name: 'Teal', value: '#0d9488' },
-  // Row 3: Blues
-  { name: 'Cyan', value: '#0891b2' },
-  { name: 'Sky', value: '#0284c7' },
-  { name: 'Blue', value: '#2563eb' },
-  { name: 'Indigo', value: '#4f46e5' },
-  // Row 4: Purples & Pinks
-  { name: 'Violet', value: '#7c3aed' },
-  { name: 'Purple', value: '#9333ea' },
-  { name: 'Fuchsia', value: '#c026d3' },
-  { name: 'Pink', value: '#db2777' },
-  // Row 5: Neutrals
-  { name: 'Rose', value: '#e11d48' },
-  { name: 'Slate', value: '#475569' },
-  { name: 'Gray', value: '#6b7280' },
-  { name: 'Stone', value: '#78716c' },
+  { name: 'Yellow', value: '#eab308' },
+  { name: 'Lime', value: '#84cc16' },
+  // Row 2: Greens & Teals
+  { name: 'Green', value: '#22c55e' },
+  { name: 'Emerald', value: '#10b981' },
+  { name: 'Teal', value: '#14b8a6' },
+  { name: 'Cyan', value: '#06b6d4' },
+  { name: 'Sky', value: '#0ea5e9' },
+  // Row 3: Blues & Purples
+  { name: 'Blue', value: '#3b82f6' },
+  { name: 'Indigo', value: '#6366f1' },
+  { name: 'Violet', value: '#8b5cf6' },
+  { name: 'Purple', value: '#a855f7' },
+  { name: 'Fuchsia', value: '#d946ef' },
+  // Row 4: Pinks & Neutrals
+  { name: 'Pink', value: '#ec4899' },
+  { name: 'Rose', value: '#f43f5e' },
+  { name: 'White', value: '#f8fafc' },
+  { name: 'Gray', value: '#94a3b8' },
+  { name: 'Black', value: '#1e293b' },
 ];
 
 interface MemberWithTeams extends Member {
@@ -106,11 +105,14 @@ export default function AdminPage() {
 
   // Calendar events
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
-  const [newEventDate, setNewEventDate] = useState('');
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+  });
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<string | null>(null);
   const [newEventTitle, setNewEventTitle] = useState('');
   const [newEventColor, setNewEventColor] = useState('#0d9488');
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
-  const [editingEventDate, setEditingEventDate] = useState('');
   const [editingEventTitle, setEditingEventTitle] = useState('');
   const [editingEventColor, setEditingEventColor] = useState('');
 
@@ -407,13 +409,14 @@ export default function AdminPage() {
   };
 
   // Content management handlers
-  const loadContent = async (teamId: string) => {
+  const loadContent = async (teamId: string, month?: string) => {
     if (!teamId) return;
+    const targetMonth = month || calendarMonth;
     try {
       const [announcementsRes, linksRes, eventsRes] = await Promise.all([
         fetch(`/api/announcements?teamId=${teamId}`),
         fetch(`/api/shared-links?teamId=${teamId}`),
-        fetch(`/api/calendar-events?teamId=${teamId}`),
+        fetch(`/api/calendar-events?teamId=${teamId}&month=${targetMonth}`),
       ]);
       const [announcementsData, linksData, eventsData] = await Promise.all([
         announcementsRes.json(),
@@ -538,24 +541,23 @@ export default function AdminPage() {
 
   // Calendar event handlers
   const handleAddCalendarEvent = async () => {
-    if (!selectedTeamForContent || !newEventDate || !newEventTitle.trim() || !member) return;
+    if (!selectedTeamForContent || !selectedCalendarDate || !newEventTitle.trim() || !member) return;
     try {
       const res = await fetch('/api/calendar-events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           teamId: selectedTeamForContent,
-          eventDate: newEventDate,
+          eventDate: selectedCalendarDate,
           title: newEventTitle.trim(),
           color: newEventColor,
           memberId: member.id,
         }),
       });
       if (res.ok) {
-        setNewEventDate('');
         setNewEventTitle('');
         setNewEventColor('#0d9488');
-        loadContent(selectedTeamForContent);
+        loadContent(selectedTeamForContent, calendarMonth);
       }
     } catch (error) {
       console.error('Failed to add calendar event:', error);
@@ -563,23 +565,21 @@ export default function AdminPage() {
   };
 
   const handleUpdateCalendarEvent = async (id: string) => {
-    if (!editingEventDate || !editingEventTitle.trim()) return;
+    if (!editingEventTitle.trim()) return;
     try {
       const res = await fetch(`/api/calendar-events/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          eventDate: editingEventDate,
           title: editingEventTitle.trim(),
           color: editingEventColor,
         }),
       });
       if (res.ok) {
         setEditingEventId(null);
-        setEditingEventDate('');
         setEditingEventTitle('');
         setEditingEventColor('');
-        loadContent(selectedTeamForContent);
+        loadContent(selectedTeamForContent, calendarMonth);
       }
     } catch (error) {
       console.error('Failed to update calendar event:', error);
@@ -590,7 +590,7 @@ export default function AdminPage() {
     if (!confirm('Delete this event?')) return;
     try {
       await fetch(`/api/calendar-events/${id}`, { method: 'DELETE' });
-      loadContent(selectedTeamForContent);
+      loadContent(selectedTeamForContent, calendarMonth);
     } catch (error) {
       console.error('Failed to delete calendar event:', error);
     }
@@ -1435,7 +1435,7 @@ export default function AdminPage() {
                       </div>
                     </div>
 
-                    {/* Calendar Events Section */}
+                    {/* Calendar Events Section - Visual Calendar */}
                     <div className="bg-gray-50 rounded-lg p-4">
                       <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
                         <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1444,163 +1444,277 @@ export default function AdminPage() {
                         Calendar Events
                       </h3>
 
-                      {/* Add New Event */}
-                      <div className="mb-4 space-y-2">
-                        <input
-                          type="date"
-                          value={newEventDate}
-                          onChange={(e) => setNewEventDate(e.target.value)}
-                          className="input-field w-full text-sm"
-                        />
-                        <input
-                          type="text"
-                          value={newEventTitle}
-                          onChange={(e) => setNewEventTitle(e.target.value)}
-                          placeholder="Event title"
-                          className="input-field w-full text-sm"
-                        />
-                        <div>
-                          <label className="text-xs text-gray-500 block mb-1">Color:</label>
-                          <div className="grid grid-cols-10 gap-1">
-                            {EVENT_COLORS.map((color) => (
-                              <button
-                                key={color.value}
-                                type="button"
-                                onClick={() => setNewEventColor(color.value)}
-                                className={`w-5 h-5 rounded-full transition-all ${
-                                  newEventColor === color.value
-                                    ? 'ring-2 ring-offset-1 ring-gray-400 scale-110'
-                                    : 'hover:scale-105'
-                                }`}
-                                style={{ backgroundColor: color.value }}
-                                title={color.name}
-                              />
-                            ))}
-                          </div>
+                      {/* Month Navigation */}
+                      <div className="flex items-center justify-between mb-3">
+                        <button
+                          onClick={() => {
+                            const [year, month] = calendarMonth.split('-').map(Number);
+                            const newDate = new Date(year, month - 2, 1);
+                            const newMonth = `${newDate.getFullYear()}-${(newDate.getMonth() + 1).toString().padStart(2, '0')}`;
+                            setCalendarMonth(newMonth);
+                            setSelectedCalendarDate(null);
+                            loadContent(selectedTeamForContent, newMonth);
+                          }}
+                          className="p-1 hover:bg-gray-200 rounded"
+                        >
+                          <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                          </svg>
+                        </button>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-700">
+                            {new Date(calendarMonth + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                          </span>
+                          <button
+                            onClick={() => {
+                              const now = new Date();
+                              const todayMonth = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+                              setCalendarMonth(todayMonth);
+                              setSelectedCalendarDate(null);
+                              loadContent(selectedTeamForContent, todayMonth);
+                            }}
+                            className="text-xs text-teal-600 hover:text-teal-700 font-medium"
+                          >
+                            Today
+                          </button>
                         </div>
                         <button
-                          onClick={handleAddCalendarEvent}
-                          disabled={!newEventDate || !newEventTitle.trim()}
-                          className="btn-primary text-sm disabled:opacity-50"
+                          onClick={() => {
+                            const [year, month] = calendarMonth.split('-').map(Number);
+                            const newDate = new Date(year, month, 1);
+                            const newMonth = `${newDate.getFullYear()}-${(newDate.getMonth() + 1).toString().padStart(2, '0')}`;
+                            setCalendarMonth(newMonth);
+                            setSelectedCalendarDate(null);
+                            loadContent(selectedTeamForContent, newMonth);
+                          }}
+                          className="p-1 hover:bg-gray-200 rounded"
                         >
-                          Add Event
+                          <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
                         </button>
                       </div>
 
-                      {/* Events List */}
-                      <div className="space-y-2 max-h-80 overflow-y-auto">
-                        {calendarEvents.length === 0 ? (
-                          <p className="text-sm text-gray-500 italic">No events yet</p>
-                        ) : (
-                          calendarEvents.map((event) => (
-                            <div key={event.id} className="bg-white rounded-lg p-3 border border-gray-200">
-                              {editingEventId === event.id ? (
-                                <div className="space-y-2">
-                                  <input
-                                    type="date"
-                                    value={editingEventDate}
-                                    onChange={(e) => setEditingEventDate(e.target.value)}
-                                    className="input-field w-full text-sm"
-                                  />
-                                  <input
-                                    type="text"
-                                    value={editingEventTitle}
-                                    onChange={(e) => setEditingEventTitle(e.target.value)}
-                                    placeholder="Event title"
-                                    className="input-field w-full text-sm"
-                                    autoFocus
-                                  />
-                                  <div>
-                                    <label className="text-xs text-gray-500 block mb-1">Color:</label>
-                                    <div className="grid grid-cols-10 gap-1">
-                                      {EVENT_COLORS.map((color) => (
-                                        <button
-                                          key={color.value}
-                                          type="button"
-                                          onClick={() => setEditingEventColor(color.value)}
-                                          className={`w-4 h-4 rounded-full transition-all ${
-                                            editingEventColor === color.value
-                                              ? 'ring-2 ring-offset-1 ring-gray-400 scale-110'
-                                              : 'hover:scale-105'
-                                          }`}
-                                          style={{ backgroundColor: color.value }}
-                                          title={color.name}
+                      {/* Calendar Grid */}
+                      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden mb-3">
+                        {/* Day headers */}
+                        <div className="grid grid-cols-7 border-b border-gray-200">
+                          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                            <div key={i} className="text-center text-[10px] font-medium text-gray-500 py-1">
+                              {day}
+                            </div>
+                          ))}
+                        </div>
+                        {/* Calendar days */}
+                        <div className="grid grid-cols-7">
+                          {(() => {
+                            const [year, month] = calendarMonth.split('-').map(Number);
+                            const firstDay = new Date(year, month - 1, 1).getDay();
+                            const daysInMonth = new Date(year, month, 0).getDate();
+                            const today = new Date();
+                            const todayStr = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+                            const cells = [];
+
+                            // Empty cells for days before month starts
+                            for (let i = 0; i < firstDay; i++) {
+                              cells.push(<div key={`empty-${i}`} className="h-8 border-b border-r border-gray-100" />);
+                            }
+
+                            // Day cells
+                            for (let day = 1; day <= daysInMonth; day++) {
+                              const dateStr = `${calendarMonth}-${day.toString().padStart(2, '0')}`;
+                              const dayEvents = calendarEvents.filter(e => e.event_date === dateStr);
+                              const isToday = dateStr === todayStr;
+                              const isSelected = dateStr === selectedCalendarDate;
+
+                              cells.push(
+                                <button
+                                  key={day}
+                                  onClick={() => setSelectedCalendarDate(dateStr)}
+                                  className={`h-8 border-b border-r border-gray-100 relative flex flex-col items-center justify-start pt-0.5 transition-colors ${
+                                    isSelected
+                                      ? 'bg-teal-100'
+                                      : isToday
+                                      ? 'bg-teal-50'
+                                      : 'hover:bg-gray-50'
+                                  }`}
+                                >
+                                  <span className={`text-[10px] ${
+                                    isToday ? 'font-bold text-teal-600' : 'text-gray-700'
+                                  }`}>
+                                    {day}
+                                  </span>
+                                  {dayEvents.length > 0 && (
+                                    <div className="flex gap-0.5 mt-0.5">
+                                      {dayEvents.slice(0, 3).map((e, idx) => (
+                                        <div
+                                          key={idx}
+                                          className="w-1.5 h-1.5 rounded-full"
+                                          style={{ backgroundColor: e.color }}
                                         />
                                       ))}
                                     </div>
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <button
-                                      onClick={() => handleUpdateCalendarEvent(event.id)}
-                                      className="btn-primary text-xs px-3 py-1"
-                                    >
-                                      Save
-                                    </button>
-                                    <button
-                                      onClick={() => {
-                                        setEditingEventId(null);
-                                        setEditingEventDate('');
-                                        setEditingEventTitle('');
-                                        setEditingEventColor('');
-                                      }}
-                                      className="btn-secondary text-xs px-3 py-1"
-                                    >
-                                      Cancel
-                                    </button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <>
-                                  <div className="flex items-start justify-between gap-2">
-                                    <div className="flex items-center gap-2">
-                                      <div
-                                        className="w-3 h-3 rounded-full flex-shrink-0"
-                                        style={{ backgroundColor: event.color }}
+                                  )}
+                                </button>
+                              );
+                            }
+
+                            return cells;
+                          })()}
+                        </div>
+                      </div>
+
+                      {/* Selected Day Panel */}
+                      {selectedCalendarDate && (
+                        <div className="bg-white rounded-lg border border-teal-200 p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-sm font-medium text-gray-800">
+                              {new Date(selectedCalendarDate + 'T00:00:00').toLocaleDateString('en-US', {
+                                weekday: 'long',
+                                month: 'short',
+                                day: 'numeric'
+                              })}
+                            </h4>
+                            <button
+                              onClick={() => setSelectedCalendarDate(null)}
+                              className="text-gray-400 hover:text-gray-600"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+
+                          {/* Events for selected day */}
+                          <div className="space-y-2 mb-3">
+                            {calendarEvents.filter(e => e.event_date === selectedCalendarDate).length === 0 ? (
+                              <p className="text-xs text-gray-500 italic">No events</p>
+                            ) : (
+                              calendarEvents.filter(e => e.event_date === selectedCalendarDate).map((event) => (
+                                <div key={event.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                                  {editingEventId === event.id ? (
+                                    <div className="flex-1 space-y-2">
+                                      <input
+                                        type="text"
+                                        value={editingEventTitle}
+                                        onChange={(e) => setEditingEventTitle(e.target.value)}
+                                        className="input-field w-full text-xs py-1"
+                                        autoFocus
                                       />
-                                      <div>
-                                        <p className="text-sm font-medium text-gray-800">{event.title}</p>
-                                        <p className="text-xs text-gray-500">
-                                          {new Date(event.event_date + 'T00:00:00').toLocaleDateString('en-US', {
-                                            weekday: 'short',
-                                            month: 'short',
-                                            day: 'numeric',
-                                            year: 'numeric'
-                                          })}
-                                        </p>
+                                      <div className="flex gap-1 flex-wrap">
+                                        {EVENT_COLORS.map((color) => (
+                                          <button
+                                            key={color.value}
+                                            type="button"
+                                            onClick={() => setEditingEventColor(color.value)}
+                                            className={`w-4 h-4 rounded-full transition-all ${
+                                              editingEventColor === color.value
+                                                ? 'ring-2 ring-offset-1 ring-gray-400 scale-110'
+                                                : 'hover:scale-105'
+                                            }`}
+                                            style={{ backgroundColor: color.value }}
+                                          />
+                                        ))}
+                                      </div>
+                                      <div className="flex gap-1">
+                                        <button
+                                          onClick={() => handleUpdateCalendarEvent(event.id)}
+                                          className="btn-primary text-xs px-2 py-0.5"
+                                        >
+                                          Save
+                                        </button>
+                                        <button
+                                          onClick={() => {
+                                            setEditingEventId(null);
+                                            setEditingEventTitle('');
+                                            setEditingEventColor('');
+                                          }}
+                                          className="btn-secondary text-xs px-2 py-0.5"
+                                        >
+                                          Cancel
+                                        </button>
                                       </div>
                                     </div>
-                                    <div className="flex gap-1 flex-shrink-0">
+                                  ) : (
+                                    <>
+                                      <div
+                                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                        style={{ backgroundColor: event.color }}
+                                      />
+                                      <span className="text-xs text-gray-800 flex-1">{event.title}</span>
                                       <button
                                         onClick={() => {
                                           setEditingEventId(event.id);
-                                          setEditingEventDate(event.event_date);
                                           setEditingEventTitle(event.title);
                                           setEditingEventColor(event.color);
                                         }}
-                                        className="text-gray-400 hover:text-teal-600 p-1"
-                                        title="Edit"
+                                        className="text-gray-400 hover:text-teal-600 p-0.5"
                                       >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                         </svg>
                                       </button>
                                       <button
                                         onClick={() => handleDeleteCalendarEvent(event.id)}
-                                        className="text-gray-400 hover:text-red-600 p-1"
-                                        title="Delete"
+                                        className="text-gray-400 hover:text-red-600 p-0.5"
                                       >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                         </svg>
                                       </button>
-                                    </div>
-                                  </div>
-                                </>
-                              )}
+                                    </>
+                                  )}
+                                </div>
+                              ))
+                            )}
+                          </div>
+
+                          {/* Add new event for selected day */}
+                          <div className="border-t border-gray-200 pt-2">
+                            <div className="flex gap-2 mb-2">
+                              <input
+                                type="text"
+                                value={newEventTitle}
+                                onChange={(e) => setNewEventTitle(e.target.value)}
+                                placeholder="New event..."
+                                className="input-field flex-1 text-xs py-1"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && newEventTitle.trim()) {
+                                    handleAddCalendarEvent();
+                                  }
+                                }}
+                              />
+                              <button
+                                onClick={handleAddCalendarEvent}
+                                disabled={!newEventTitle.trim()}
+                                className="btn-primary text-xs px-2 py-1 disabled:opacity-50"
+                              >
+                                Add
+                              </button>
                             </div>
-                          ))
-                        )}
-                      </div>
+                            <div className="flex gap-1 flex-wrap">
+                              {EVENT_COLORS.map((color) => (
+                                <button
+                                  key={color.value}
+                                  type="button"
+                                  onClick={() => setNewEventColor(color.value)}
+                                  className={`w-4 h-4 rounded-full transition-all ${
+                                    newEventColor === color.value
+                                      ? 'ring-2 ring-offset-1 ring-gray-400 scale-110'
+                                      : 'hover:scale-105'
+                                  }`}
+                                  style={{ backgroundColor: color.value }}
+                                  title={color.name}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {!selectedCalendarDate && (
+                        <p className="text-xs text-gray-500 text-center">Click a day to manage events</p>
+                      )}
                     </div>
                   </div>
                 )}
