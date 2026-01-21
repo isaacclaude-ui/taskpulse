@@ -9,7 +9,7 @@ import StepDetailModal from '@/components/StepDetailModal';
 import TaskEditModal from '@/components/TaskEditModal';
 import DashboardSummary from '@/components/DashboardSummary';
 import Footer from '@/components/Footer';
-import type { TaskWithSteps, Member, Team, Announcement, SharedLink } from '@/types';
+import type { TaskWithSteps, Member, Team, Announcement, SharedLink, CalendarEvent } from '@/types';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -33,6 +33,14 @@ export default function DashboardPage() {
   const [sharedLinks, setSharedLinks] = useState<SharedLink[]>([]);
   const [showAllAnnouncements, setShowAllAnnouncements] = useState(false);
 
+  // Calendar state
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+  });
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
   useEffect(() => {
     async function checkAuth() {
       const user = await getCurrentUser();
@@ -48,6 +56,7 @@ export default function DashboardPage() {
       loadAvailableTeams();
       loadAnnouncements();
       loadSharedLinks();
+      loadCalendarEvents();
     }
     checkAuth();
   }, [router, teamId, member]);
@@ -88,6 +97,20 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error('Failed to load shared links:', error);
+    }
+  };
+
+  const loadCalendarEvents = async (month?: string) => {
+    if (!teamId) return;
+    const targetMonth = month || calendarMonth;
+    try {
+      const res = await fetch(`/api/calendar-events?teamId=${teamId}&month=${targetMonth}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCalendarEvents(data.events || []);
+      }
+    } catch (error) {
+      console.error('Failed to load calendar events:', error);
     }
   };
 
@@ -362,9 +385,9 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Announcements & Shared Links Section */}
+      {/* Announcements, Shared Links & Calendar Section */}
       <div className="max-w-7xl mx-auto px-4 py-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ minHeight: '20vh' }}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4" style={{ minHeight: '20vh' }}>
           {/* Announcements - Left */}
           <div className="glass-card rounded-xl p-4 flex flex-col">
             <div className="flex items-center justify-between mb-3">
@@ -451,6 +474,132 @@ export default function DashboardPage() {
                 </table>
               )}
             </div>
+          </div>
+
+          {/* Calendar - Right */}
+          <div className="glass-card rounded-xl p-4 flex flex-col">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide flex items-center gap-2">
+                <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Calendar
+              </h2>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => {
+                    const [year, month] = calendarMonth.split('-').map(Number);
+                    const prevDate = new Date(year, month - 2, 1);
+                    const newMonth = `${prevDate.getFullYear()}-${(prevDate.getMonth() + 1).toString().padStart(2, '0')}`;
+                    setCalendarMonth(newMonth);
+                    loadCalendarEvents(newMonth);
+                  }}
+                  className="p-1 hover:bg-slate-100 rounded"
+                >
+                  <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <span className="text-xs font-medium text-slate-600 min-w-[80px] text-center">
+                  {new Date(calendarMonth + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                </span>
+                <button
+                  onClick={() => {
+                    const [year, month] = calendarMonth.split('-').map(Number);
+                    const nextDate = new Date(year, month, 1);
+                    const newMonth = `${nextDate.getFullYear()}-${(nextDate.getMonth() + 1).toString().padStart(2, '0')}`;
+                    setCalendarMonth(newMonth);
+                    loadCalendarEvents(newMonth);
+                  }}
+                  className="p-1 hover:bg-slate-100 rounded"
+                >
+                  <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="flex-1">
+              {/* Day headers */}
+              <div className="grid grid-cols-7 gap-px mb-1">
+                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
+                  <div key={day} className="text-xs text-slate-400 text-center py-1">{day}</div>
+                ))}
+              </div>
+              {/* Calendar days */}
+              <div className="grid grid-cols-7 gap-px">
+                {(() => {
+                  const [year, month] = calendarMonth.split('-').map(Number);
+                  const firstDay = new Date(year, month - 1, 1).getDay();
+                  const daysInMonth = new Date(year, month, 0).getDate();
+                  const today = new Date();
+                  const isCurrentMonth = today.getFullYear() === year && today.getMonth() + 1 === month;
+
+                  const days = [];
+                  // Empty cells for days before first of month
+                  for (let i = 0; i < firstDay; i++) {
+                    days.push(<div key={`empty-${i}`} className="h-8" />);
+                  }
+                  // Days of the month
+                  for (let day = 1; day <= daysInMonth; day++) {
+                    const dateStr = `${calendarMonth}-${day.toString().padStart(2, '0')}`;
+                    const dayEvents = calendarEvents.filter(e => e.event_date === dateStr);
+                    const isToday = isCurrentMonth && today.getDate() === day;
+                    const isSelected = selectedDate === dateStr;
+
+                    days.push(
+                      <button
+                        key={day}
+                        onClick={() => setSelectedDate(isSelected ? null : dateStr)}
+                        className={`h-8 text-xs rounded flex flex-col items-center justify-start pt-0.5 transition-colors relative ${
+                          isToday ? 'bg-teal-100 font-semibold text-teal-700' :
+                          isSelected ? 'bg-slate-200' :
+                          'hover:bg-slate-50'
+                        }`}
+                      >
+                        <span>{day}</span>
+                        {dayEvents.length > 0 && (
+                          <div className="absolute bottom-0.5 left-0 right-0 flex justify-center gap-0.5 overflow-hidden px-0.5">
+                            {dayEvents.slice(0, 3).map((event, idx) => (
+                              <div
+                                key={idx}
+                                className="w-1 h-1 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: event.color }}
+                                title={event.title}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  }
+                  return days;
+                })()}
+              </div>
+            </div>
+
+            {/* Selected date events */}
+            {selectedDate && (
+              <div className="mt-2 pt-2 border-t border-slate-100">
+                <div className="text-xs font-medium text-slate-600 mb-1">
+                  {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                </div>
+                <div className="space-y-1 max-h-20 overflow-y-auto">
+                  {calendarEvents.filter(e => e.event_date === selectedDate).length === 0 ? (
+                    <p className="text-xs text-slate-400">No events</p>
+                  ) : (
+                    calendarEvents.filter(e => e.event_date === selectedDate).map((event) => (
+                      <div key={event.id} className="flex items-center gap-1.5 text-xs">
+                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: event.color }} />
+                        <span className="text-slate-700 truncate">{event.title}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

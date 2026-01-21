@@ -224,3 +224,15 @@ export interface EmailSettings {
   last_sent_at: string | null;
   created_at: string;
 }
+
+// Calendar Event
+export interface CalendarEvent {
+  id: string;
+  team_id: string;
+  event_date: string;
+  title: string;
+  color: string;
+  created_by: string;
+  created_at: string;
+  member?: Member;
+}
