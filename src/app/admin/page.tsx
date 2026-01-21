@@ -1085,7 +1085,7 @@ export default function AdminPage() {
                             <div className="relative group">
                               <div className="flex flex-wrap gap-1 min-h-[24px]">
                                 {memberTeams.length > 0 ? (
-                                  memberTeams.slice(0, 2).map(t => (
+                                  memberTeams.slice(0, 4).map(t => (
                                     <span key={t.id} className="text-xs bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded truncate max-w-[80px]" title={t.name}>
                                       {t.name}
                                     </span>
@@ -1093,8 +1093,8 @@ export default function AdminPage() {
                                 ) : (
                                   <span className="text-xs text-gray-400">None</span>
                                 )}
-                                {memberTeams.length > 2 && (
-                                  <span className="text-xs text-gray-500">+{memberTeams.length - 2}</span>
+                                {memberTeams.length > 4 && (
+                                  <span className="text-xs text-gray-500">+{memberTeams.length - 4}</span>
                                 )}
                               </div>
                               {/* Dropdown on hover */}
@@ -1144,28 +1144,32 @@ export default function AdminPage() {
                               <option value="admin">Admin</option>
                             </select>
                           </td>
-                          {/* Actions column */}
+                          {/* Actions column - fixed width for alignment */}
                           <td className="py-3 px-3">
                             <div className="flex items-center justify-center gap-0.5">
-                              {m.email && (
-                                <button
-                                  onClick={() => handleSendInvite(m.id, m.email, m.name)}
-                                  disabled={sendingInvite === m.id}
-                                  className="text-gray-400 hover:text-teal-600 p-1 rounded hover:bg-teal-50 disabled:opacity-50"
-                                  title="Send invite"
-                                >
-                                  {sendingInvite === m.id ? (
-                                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                  ) : (
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                    </svg>
-                                  )}
-                                </button>
-                              )}
+                              {/* Email slot - always reserve space */}
+                              <div className="w-6 h-6 flex items-center justify-center">
+                                {m.email ? (
+                                  <button
+                                    onClick={() => handleSendInvite(m.id, m.email, m.name)}
+                                    disabled={sendingInvite === m.id}
+                                    className="text-gray-400 hover:text-teal-600 p-1 rounded hover:bg-teal-50 disabled:opacity-50"
+                                    title="Send invite"
+                                  >
+                                    {sendingInvite === m.id ? (
+                                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                      </svg>
+                                    ) : (
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                      </svg>
+                                    )}
+                                  </button>
+                                ) : null}
+                              </div>
+                              {/* Archive/Restore slot */}
                               {m.is_archived ? (
                                 <button onClick={() => handleUnarchiveMember(m.id)} className="text-amber-500 hover:text-amber-600 p-1" title="Restore">
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
