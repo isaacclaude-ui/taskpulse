@@ -99,12 +99,14 @@ export default function TaskRow({
             onClick={() => onTaskEdit(task.id)}
             title="Click to edit with AI"
           >
-            <div className="font-medium text-gray-900 text-sm truncate flex items-center gap-1" title={task.title}>
-              {task.title}
+            <div className="flex items-start gap-1" title={task.title}>
+              <span className="font-medium text-gray-900 text-xs leading-tight line-clamp-2">
+                {task.title}
+              </span>
               {/* Recurrence indicator */}
               {task.recurrence?.enabled && (
-                <span className="flex items-center gap-0.5 text-teal-600" title={formatRecurrenceShort(task.recurrence)}>
-                  <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <span className="flex items-center gap-0.5 text-teal-600 shrink-0" title={formatRecurrenceShort(task.recurrence)}>
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
                   {task.recurrence_count && task.recurrence_count > 0 && (
@@ -112,7 +114,7 @@ export default function TaskRow({
                   )}
                 </span>
               )}
-              <svg className="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 h-3 text-gray-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
             </div>
