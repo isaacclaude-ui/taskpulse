@@ -82,7 +82,7 @@ export default function PersonCell({
     // Color scheme: Done=grey, Now=green, Coming Soon=blue
     const cardStyles = {
       completed: 'bg-gray-100 border border-gray-300',
-      active: 'bg-white border-2 border-green-400 shadow-sm',
+      active: 'bg-green-50 border border-green-400',
       pending: 'bg-blue-50/50 border border-blue-200 opacity-70',
     };
 
@@ -167,10 +167,10 @@ export default function PersonCell({
 
         {/* Action buttons - only for active step and current user or admin */}
         {status === 'active' && (isCurrentUser || isAdmin) && (
-          <div className="flex gap-1 mt-2 pt-2 border-t border-green-100 relative">
+          <div className="flex gap-1 mt-1.5 relative">
             {!isFirst && !step.is_joint && (
               <button
-                className="flex-1 text-[10px] bg-gray-400 text-white px-1.5 py-1 rounded font-medium transition-all duration-150 ease-out hover:bg-gray-500 hover:scale-[1.03] active:scale-95"
+                className="flex-1 text-[9px] bg-gray-400 text-white px-1 py-0.5 rounded font-medium transition-all duration-150 ease-out hover:bg-gray-500 hover:scale-[1.03] active:scale-95"
                 onClick={(e) => {
                   e.stopPropagation();
                   onStepReturn(step.id);
@@ -180,7 +180,7 @@ export default function PersonCell({
               </button>
             )}
             <button
-              className="flex-1 text-[10px] bg-green-500 text-white px-1.5 py-1 rounded font-medium transition-all duration-150 ease-out hover:bg-green-600 hover:scale-[1.03] active:scale-95"
+              className="flex-1 text-[9px] bg-green-500 text-white px-1 py-0.5 rounded font-medium transition-all duration-150 ease-out hover:bg-green-600 hover:scale-[1.03] active:scale-95"
               onClick={(e) => {
                 e.stopPropagation();
                 onStepComplete(step.id);
