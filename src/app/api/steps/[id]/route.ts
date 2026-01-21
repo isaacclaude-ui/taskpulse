@@ -39,21 +39,27 @@ export async function GET(
     const prevStep = allSteps?.find(s => s.step_order === currentOrder - 1) || null;
     const nextStep = allSteps?.find(s => s.step_order === currentOrder + 1) || null;
 
-    // Get comments with member info
+    // Get ALL step IDs in this task for continuous comment flow
+    const allStepIds = allSteps?.map(s => s.id) || [id];
+
+    // Get comments from ALL steps in the same task (continuous flow)
     const { data: comments, error: commentsError } = await supabase
       .from('step_comments')
       .select(`
         *,
         member:members!step_comments_member_id_fkey (
           id, name, email
+        ),
+        step:pipeline_steps!step_comments_step_id_fkey (
+          id, name, step_order
         )
       `)
-      .eq('step_id', id)
+      .in('step_id', allStepIds)
       .order('created_at', { ascending: true });
 
     if (commentsError) throw commentsError;
 
-    return NextResponse.json({ step, comments, prevStep, nextStep });
+    return NextResponse.json({ step, comments, prevStep, nextStep, allSteps });
   } catch (error) {
     console.error('Get step error:', error);
     return NextResponse.json({ error: 'Failed to get step' }, { status: 500 });

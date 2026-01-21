@@ -121,6 +121,11 @@ export interface StepComment {
 // Comment with member info
 export interface StepCommentWithMember extends StepComment {
   member: Member;
+  step?: {
+    id: string;
+    name: string;
+    step_order: number;
+  };
 }
 
 // AI Conversation state
