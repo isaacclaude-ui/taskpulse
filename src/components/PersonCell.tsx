@@ -80,11 +80,10 @@ export default function PersonCell({
     const { prevStep, nextStep, isFirst, isLast } = getStepContext(step);
 
     // Color scheme: Done=grey, Now=green, Coming Soon=blue
-    // Non-active cards have extra padding to match active card height (which has buttons)
     const cardStyles = {
-      completed: 'bg-gray-100 border border-gray-300 pb-8',
-      active: 'bg-green-50 border border-green-400 pb-2',
-      pending: 'bg-blue-50/50 border border-blue-200 opacity-70 pb-8',
+      completed: 'bg-gray-100 border border-gray-300',
+      active: 'bg-green-50 border border-green-400',
+      pending: 'bg-blue-50 border border-blue-300',
     };
 
     const statusIcon = {
@@ -104,7 +103,7 @@ export default function PersonCell({
     return (
       <div
         key={step.id}
-        className={`rounded p-3 relative overflow-hidden ${cardStyles[status]} ${status !== 'pending' ? 'cursor-pointer' : ''}`}
+        className={`rounded p-3 relative overflow-hidden min-h-[130px] flex flex-col ${cardStyles[status]} ${status !== 'pending' ? 'cursor-pointer' : ''}`}
         onClick={status !== 'pending' ? () => onStepClick(step.id, taskId) : undefined}
       >
         {/* DONE watermark for completed steps */}
@@ -168,7 +167,7 @@ export default function PersonCell({
 
         {/* Action buttons - always visible for active step */}
         {status === 'active' && (isCurrentUser || isAdmin) && (
-          <div className="flex gap-1 mt-1.5">
+          <div className="flex gap-1 mt-auto pt-1.5">
             {!isFirst && !step.is_joint && (
               <button
                 className="flex-1 text-[9px] bg-gray-400 text-white px-1 py-0.5 rounded font-medium transition-all duration-150 ease-out hover:bg-gray-500 hover:scale-[1.03] active:scale-95"
@@ -189,6 +188,13 @@ export default function PersonCell({
             >
               Done
             </button>
+          </div>
+        )}
+
+        {/* Invisible spacer for non-active cards to match active card height */}
+        {status !== 'active' && (
+          <div className="flex gap-1 mt-auto pt-1.5 invisible" aria-hidden="true">
+            <span className="flex-1 text-[9px] px-1 py-0.5">Spacer</span>
           </div>
         )}
       </div>
