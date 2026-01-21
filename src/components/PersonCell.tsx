@@ -129,7 +129,7 @@ export default function PersonCell({
             className={`text-xs font-medium truncate ${
               status === 'completed' ? 'text-gray-600' :
               status === 'active' ? 'text-green-700' :
-              'text-blue-700'
+              'text-blue-500'
             }`}
             title={step.name}
           >
@@ -140,7 +140,9 @@ export default function PersonCell({
         {/* Deadline */}
         {step.mini_deadline && (
           <div className={`text-[10px] mt-0.5 ml-4 relative ${
-            status === 'active' ? 'text-green-600 font-medium' : 'text-gray-500'
+            status === 'completed' ? 'text-gray-500' :
+            status === 'active' ? 'text-green-600 font-medium' :
+            'text-blue-400'
           }`}>
             Due: {new Date(step.mini_deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           </div>
