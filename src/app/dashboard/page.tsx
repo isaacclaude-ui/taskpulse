@@ -357,35 +357,35 @@ export default function DashboardPage() {
   return (
     <div className="glass-bg min-h-screen flex flex-col">
       {/* Header */}
-      <header className="header-banner overflow-x-hidden">
-        <div className="header-banner-content px-3 sm:px-4 py-4 sm:py-6">
-          <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+      <header className="header-banner">
+        <div className="header-banner-content px-2 sm:px-4 py-3 sm:py-6">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
               {/* Logo/Icon - Replace default with team logo if uploaded */}
               {team?.logo_url ? (
                 <img
                   src={team.logo_url}
                   alt={team.name}
-                  className="w-12 h-12 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl object-cover shadow-lg flex-shrink-0"
+                  className="w-10 h-10 sm:w-16 md:w-20 sm:h-16 md:h-20 rounded-lg sm:rounded-xl object-cover shadow-lg flex-shrink-0"
                 />
               ) : (
-                <div className="w-12 h-12 sm:w-20 sm:h-20 bg-white/10 rounded-lg sm:rounded-xl flex items-center justify-center backdrop-blur-sm shadow-lg flex-shrink-0">
-                  <svg className="w-6 h-6 sm:w-10 sm:h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-10 h-10 sm:w-16 md:w-20 sm:h-16 md:h-20 bg-white/10 rounded-lg sm:rounded-xl flex items-center justify-center backdrop-blur-sm shadow-lg flex-shrink-0">
+                  <svg className="w-5 h-5 sm:w-8 md:w-10 sm:h-8 md:h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
                   </svg>
                 </div>
               )}
-              <div className="min-w-0">
-                <h1 className="text-lg sm:text-2xl font-bold text-white truncate">Task Pulse</h1>
-                <div className="flex items-center gap-1 sm:gap-2 mt-0.5 text-xs sm:text-sm">
-                  <span className="text-teal-100 truncate">{business?.name}</span>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-base sm:text-xl md:text-2xl font-bold text-white truncate">Task Pulse</h1>
+                <div className="flex items-center gap-1 sm:gap-2 mt-0.5 text-[10px] sm:text-xs md:text-sm">
+                  <span className="text-teal-100 truncate max-w-[60px] sm:max-w-[100px] md:max-w-none">{business?.name}</span>
                   <span className="text-teal-300">•</span>
-                  <span className="text-white font-medium truncate">{team?.name}</span>
+                  <span className="text-white font-medium truncate max-w-[60px] sm:max-w-[100px] md:max-w-none">{team?.name}</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
+            <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-shrink-0">
               {/* User email */}
               {member && (
                 <span className="text-sm text-white/60 hidden sm:block">{member.email}</span>
@@ -395,13 +395,14 @@ export default function DashboardPage() {
               {member?.role === 'admin' && (
                 <button
                   onClick={() => router.push('/admin')}
-                  className="flex items-center gap-1 sm:gap-2 text-sm bg-white/10 text-white py-1.5 px-2 sm:py-2 sm:px-4 rounded-lg hover:bg-white/20 transition-colors font-medium"
+                  className="flex items-center justify-center text-sm bg-white/10 text-white p-2 md:py-2 md:px-4 rounded-lg hover:bg-white/20 transition-colors font-medium"
+                  title="Admin"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  <span className="hidden md:inline">Admin</span>
+                  <span className="hidden md:inline ml-2">Admin</span>
                 </button>
               )}
 
@@ -409,29 +410,31 @@ export default function DashboardPage() {
               {member && (
                 <button
                   onClick={() => router.push('/notifications')}
-                  className="flex items-center gap-1 sm:gap-2 text-sm bg-white/10 text-white py-1.5 px-2 sm:py-2 sm:px-4 rounded-lg hover:bg-white/20 transition-colors font-medium"
+                  className="flex items-center justify-center text-sm bg-white/10 text-white p-2 md:py-2 md:px-4 rounded-lg hover:bg-white/20 transition-colors font-medium"
+                  title="Notifications"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
-                  <span className="hidden md:inline">Notif</span>
+                  <span className="hidden md:inline ml-2">Notif</span>
                 </button>
               )}
 
               {/* Log Entry button - white */}
               <button
                 onClick={() => router.push('/add-log')}
-                className="flex items-center gap-1 sm:gap-2 text-sm bg-white text-teal-700 py-1.5 px-2 sm:py-2 sm:px-4 rounded-lg hover:bg-white/90 transition-colors font-medium"
+                className="flex items-center justify-center text-sm bg-white text-teal-700 p-2 md:py-2 md:px-4 rounded-lg hover:bg-white/90 transition-colors font-medium"
+                title="Add Log Entry"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                <span className="hidden md:inline">Log</span>
+                <span className="hidden md:inline ml-2">Log</span>
               </button>
 
               {/* User dropdown with team switch and logout */}
               <div className="relative group">
-                <button className="flex items-center gap-1 sm:gap-2 text-sm text-white/70 py-1.5 px-2 sm:py-2 sm:px-3 rounded-lg hover:bg-white/10 transition-colors">
+                <button className="flex items-center justify-center text-sm text-white/70 p-2 rounded-lg hover:bg-white/10 transition-colors" title="Menu">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
