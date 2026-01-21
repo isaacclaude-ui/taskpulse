@@ -108,8 +108,15 @@ export default function PersonCell({
       >
         {/* DONE watermark for completed steps */}
         {status === 'completed' && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-300 text-2xl font-bold tracking-widest rotate-[-15deg] pointer-events-none select-none opacity-70">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-400 text-2xl font-bold tracking-widest rotate-[-15deg] pointer-events-none select-none">
             DONE
+          </div>
+        )}
+
+        {/* NEXT watermark for pending steps */}
+        {status === 'pending' && (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-blue-300 text-2xl font-bold tracking-widest rotate-[-15deg] pointer-events-none select-none">
+            NEXT
           </div>
         )}
 
