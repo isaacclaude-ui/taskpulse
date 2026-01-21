@@ -46,8 +46,8 @@ export default function PersonCell({
   // No steps assigned to this person for this task
   if (steps.length === 0) {
     return (
-      <div className="bg-gray-50/50 min-h-[100px] p-2 flex items-center justify-center border-l border-gray-100">
-        <span className="text-gray-300 text-lg">·</span>
+      <div className="bg-gradient-to-b from-gray-50/30 to-gray-50/60 min-h-[100px] p-2 flex items-center justify-center border-l border-gray-100/80">
+        <span className="text-gray-200 text-2xl">—</span>
       </div>
     );
   }

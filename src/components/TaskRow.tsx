@@ -87,48 +87,51 @@ export default function TaskRow({
   const MEMBER_COL_WIDTH = 180;
 
   return (
-    <tr className="hover:bg-gray-50/50 transition-colors">
+    <tr className="hover:bg-teal-50/30 transition-colors group/row">
       {/* Task info cell - frozen first column */}
       <td
-        className="sticky left-0 z-10 bg-white border-r border-gray-100 p-3"
+        className="sticky left-0 z-10 bg-gradient-to-r from-white to-gray-50/50 border-r border-gray-200/80 p-3 shadow-[2px_0_8px_-4px_rgba(0,0,0,0.08)]"
         style={{ width: `${TASK_COL_WIDTH}px`, minWidth: `${TASK_COL_WIDTH}px`, maxWidth: `${TASK_COL_WIDTH}px` }}
       >
         <div className="flex items-start gap-2">
           {/* Single clickable area for pipeline info - opens AI editor */}
           <div
-            className="flex-1 min-w-0 cursor-pointer hover:bg-teal-50 -m-1 p-1 rounded transition-colors group"
+            className="flex-1 min-w-0 cursor-pointer hover:bg-teal-50 -m-1.5 p-1.5 rounded-lg transition-all duration-200 group border border-transparent hover:border-teal-200/50 hover:shadow-sm"
             onClick={() => onTaskEdit(task.id)}
             title="Click to edit with AI"
           >
             {/* Title row */}
-            <div className="flex items-start gap-1">
-              <span className="font-medium text-gray-900 text-xs leading-tight line-clamp-2 group-hover:text-teal-700">
+            <div className="flex items-start gap-1.5">
+              <span className="font-semibold text-gray-800 text-xs leading-tight line-clamp-2 group-hover:text-teal-700 transition-colors">
                 {task.title}
               </span>
               {task.recurrence?.enabled && (
-                <span className="flex items-center gap-0.5 text-teal-600 shrink-0" title={formatRecurrenceShort(task.recurrence)}>
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <span className="flex items-center gap-0.5 text-teal-600 shrink-0 bg-teal-50 px-1 py-0.5 rounded" title={formatRecurrenceShort(task.recurrence)}>
+                  <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
                   {task.recurrence_count && task.recurrence_count > 0 && (
-                    <span className="text-[9px] font-normal">#{task.recurrence_count + 1}</span>
+                    <span className="text-[8px] font-medium">#{task.recurrence_count + 1}</span>
                   )}
                 </span>
               )}
-              <svg className="w-3 h-3 text-gray-300 group-hover:text-teal-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 h-3 text-gray-300 group-hover:text-teal-500 shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
             </div>
             {/* Deadline */}
             {task.deadline && (
-              <div className="text-xs mt-1">
-                <span className={isOverdue ? 'text-red-600' : 'text-gray-500'}>
-                  Due: {new Date(task.deadline).toLocaleDateString()}
+              <div className="text-xs mt-1.5 flex items-center gap-1">
+                <svg className={`w-3 h-3 ${isOverdue ? 'text-red-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span className={`font-medium ${isOverdue ? 'text-red-600' : 'text-gray-600'}`}>
+                  {new Date(task.deadline).toLocaleDateString()}
                 </span>
               </div>
             )}
             {/* Description or edit prompt */}
-            <p className="text-[10px] text-gray-400 mt-1 group-hover:text-teal-600 line-clamp-2">
+            <p className="text-[10px] text-gray-400 mt-1.5 group-hover:text-teal-600 line-clamp-2 leading-relaxed transition-colors">
               {task.description || '+ Edit with AI'}
             </p>
           </div>
@@ -196,15 +199,25 @@ export default function TaskRow({
           </div>
         </div>
         {/* Progress bar */}
-        <div className="mt-2">
+        <div className="mt-2.5 pt-2 border-t border-gray-100">
           <div className="flex items-center gap-2">
-            <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden shadow-inner">
               <div
-                className="h-full bg-teal-500 rounded-full transition-all"
+                className={`h-full rounded-full transition-all duration-500 ${
+                  progressPercent === 100
+                    ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
+                    : 'bg-gradient-to-r from-teal-400 to-teal-500'
+                }`}
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
-            <span className="text-xs text-gray-500">{completedSteps}/{totalSteps}</span>
+            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
+              progressPercent === 100
+                ? 'bg-emerald-50 text-emerald-600'
+                : 'bg-gray-100 text-gray-500'
+            }`}>
+              {completedSteps}/{totalSteps}
+            </span>
           </div>
         </div>
       </td>
