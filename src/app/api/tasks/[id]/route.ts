@@ -42,24 +42,41 @@ export async function GET(
   }
 }
 
-// PATCH - Update task with AI-edited data
+// PATCH - Update task (supports both simple updates and AI-edited data)
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await context.params;
-    const { extractedData, memberAssignments } = await request.json() as {
+    const body = await request.json();
+
+    // Simple partial update (for inline editing of title/deadline)
+    if (!body.extractedData) {
+      const allowedFields: Record<string, unknown> = {};
+      if (body.title !== undefined) allowedFields.title = body.title;
+      if (body.deadline !== undefined) allowedFields.deadline = body.deadline || null;
+
+      if (Object.keys(allowedFields).length === 0) {
+        return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
+      }
+
+      const { data: task, error } = await supabase
+        .from('tasks')
+        .update(allowedFields)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return NextResponse.json({ success: true, task });
+    }
+
+    // Full AI-edited update
+    const { extractedData, memberAssignments } = body as {
       extractedData: ExtractedTaskData;
       memberAssignments: (string | null)[];
     };
-
-    if (!extractedData) {
-      return NextResponse.json(
-        { error: 'Extracted data is required' },
-        { status: 400 }
-      );
-    }
 
     // Get the task to find team_id and business_id
     const { data: task } = await supabase

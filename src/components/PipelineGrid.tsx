@@ -14,6 +14,8 @@ interface PipelineGridProps {
   onTaskDelete: (taskId: string) => void;
   onTaskDuplicate?: (taskId: string) => void;
   onTaskReopen?: (taskId: string) => void;
+  onTaskUpdate?: (taskId: string, updates: { title?: string; deadline?: string | null }) => void;
+  onStepUpdate?: (stepId: string, updates: { name?: string; mini_deadline?: string | null }) => void;
   currentMemberId?: string;
   isAdmin?: boolean;
   isCompletedView?: boolean;
@@ -30,6 +32,8 @@ export default function PipelineGrid({
   onTaskDelete,
   onTaskDuplicate,
   onTaskReopen,
+  onTaskUpdate,
+  onStepUpdate,
   currentMemberId,
   isAdmin = false,
   isCompletedView = false
@@ -134,6 +138,8 @@ export default function PipelineGrid({
                 onTaskDelete={onTaskDelete}
                 onTaskDuplicate={onTaskDuplicate}
                 onTaskReopen={onTaskReopen}
+                onTaskUpdate={onTaskUpdate}
+                onStepUpdate={onStepUpdate}
                 currentMemberId={currentMemberId}
                 isAdmin={isAdmin}
                 isCompletedView={isCompletedView}
