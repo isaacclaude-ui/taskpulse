@@ -82,6 +82,16 @@ export default function TaskRow({
   const totalSteps = task.pipeline_steps.length;
   const progressPercent = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
 
+  // Auto-generate description from pipeline steps: "Alex create wireframe, Sam build frontend..."
+  const autoDescription = task.pipeline_steps
+    .slice() // Copy to avoid mutating
+    .sort((a, b) => a.step_order - b.step_order)
+    .map(step => {
+      const firstName = (step.assigned_to_name || step.member?.name || 'Unassigned').split(' ')[0];
+      return `${firstName} ${step.name.toLowerCase()}`;
+    })
+    .join(', ');
+
   // Fixed column widths (must match PipelineGrid)
   const TASK_COL_WIDTH = 240;
   const MEMBER_COL_WIDTH = 180;
@@ -130,9 +140,9 @@ export default function TaskRow({
                 </span>
               </div>
             )}
-            {/* Description or edit prompt */}
+            {/* Auto-generated description from steps */}
             <p className="text-[10px] text-gray-400 mt-1.5 group-hover:text-teal-600 line-clamp-2 leading-relaxed transition-colors">
-              {task.description || '+ Edit with AI'}
+              {autoDescription || '+ Edit with AI'}
             </p>
           </div>
           {/* Action buttons */}
