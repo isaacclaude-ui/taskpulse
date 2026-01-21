@@ -11,14 +11,18 @@ export async function GET(
 
     const { data: memberTeams, error } = await supabase
       .from('member_teams')
-      .select('team_id, teams(id, name, business_id)')
+      .select('team_id, teams:team_id(id, name, business_id)')
       .eq('member_id', id);
 
     if (error) {
+      console.error('Error fetching member teams:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const teams = memberTeams?.map(mt => mt.teams).filter(Boolean) || [];
+    console.log('Raw member teams data:', JSON.stringify(memberTeams, null, 2));
+
+    // Extract teams from the join result
+    const teams = memberTeams?.map(mt => (mt as { teams: { id: string; name: string; business_id: string } }).teams).filter(Boolean) || [];
 
     return NextResponse.json({ teams });
   } catch (error) {

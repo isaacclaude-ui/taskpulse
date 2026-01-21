@@ -348,9 +348,9 @@ export default function DashboardPage() {
                   style={{ minWidth: '280px', maxWidth: '350px' }}
                 >
                   {/* Team switcher section */}
-                  {availableTeams.length > 1 && (
+                  {availableTeams.length > 0 && (
                     <>
-                      <div className="px-4 py-1 text-xs text-gray-400 uppercase tracking-wide">Switch Team</div>
+                      <div className="px-4 py-1 text-xs text-gray-400 uppercase tracking-wide">Switch Team ({availableTeams.length})</div>
                       {availableTeams.map((t) => (
                         <button
                           key={t.id}
