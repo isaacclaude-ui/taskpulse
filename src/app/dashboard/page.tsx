@@ -157,11 +157,12 @@ export default function DashboardPage() {
             if (step.mini_deadline) {
               const stepDate = step.mini_deadline.split('T')[0];
               if (stepDate.startsWith(targetMonth)) {
-                const stepPart = truncateText(step.name, STEP_NAME_LIMIT + TASK_NAME_LIMIT);
+                const taskPart = truncateText(task.title, TASK_NAME_LIMIT);
+                const stepPart = truncateText(step.name, STEP_NAME_LIMIT);
                 items.push({
                   id: `step-${step.id}`,
                   event_date: stepDate,
-                  title: `Due: ${stepPart}`,
+                  title: `Due: ${taskPart} - ${stepPart}`,
                   color: '#fca5a5', // Faded red for step deadlines (red-300)
                   source: 'step',
                   task_id: task.id,
