@@ -21,6 +21,15 @@ interface AIResponse {
   team_members: Member[];
 }
 
+// User-confirmed assignment for a step
+interface ConfirmedAssignment {
+  stepIndex: number;
+  memberId: string | null;  // null = create new member
+  memberName: string;       // Display name (from team or extracted)
+  isConfirmed: boolean;     // Has user explicitly confirmed?
+  extractedName: string | null; // Original name from AI
+}
+
 // Helper to safely format dates
 function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return 'N/A';
@@ -45,6 +54,10 @@ export default function AddLogPage() {
   const [matchedMembers, setMatchedMembers] = useState<AIResponse['matched_members']>([]);
   const [readyToCreate, setReadyToCreate] = useState(false);
   const [creating, setCreating] = useState(false);
+
+  // Member confirmation state
+  const [teamMembers, setTeamMembers] = useState<Member[]>([]);
+  const [confirmedAssignments, setConfirmedAssignments] = useState<ConfirmedAssignment[]>([]);
 
   useEffect(() => {
     async function checkAuth() {
@@ -99,6 +112,20 @@ export default function AddLogPage() {
       setExtractedData(data.extracted_data);
       setMatchedMembers(data.matched_members);
       setReadyToCreate(data.ready_to_create);
+      setTeamMembers(data.team_members || []);
+
+      // Initialize confirmed assignments from AI matches
+      const initialAssignments: ConfirmedAssignment[] = data.extracted_data.pipeline_steps.map((step, index) => {
+        const match = data.matched_members.find(m => m.step_index === index);
+        return {
+          stepIndex: index,
+          memberId: match?.member_id || null,
+          memberName: match?.member_name || step.assigned_to_name || '',
+          isConfirmed: !!match, // Auto-confirmed if AI found a match
+          extractedName: step.assigned_to_name || null,
+        };
+      });
+      setConfirmedAssignments(initialAssignments);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to process message');
     }
@@ -120,10 +147,10 @@ export default function AddLogPage() {
     setError('');
 
     try {
-      // Build member assignments from matched members
+      // Build member assignments from USER-CONFIRMED selections (not just AI matches)
       const memberAssignments = extractedData.pipeline_steps.map((_, index) => {
-        const match = matchedMembers.find(m => m.step_index === index);
-        return match?.member_id || null;
+        const confirmed = confirmedAssignments.find(a => a.stepIndex === index);
+        return confirmed?.memberId || null;
       });
 
       const res = await fetch('/api/ai/confirm', {
@@ -145,6 +172,23 @@ export default function AddLogPage() {
       setError(err instanceof Error ? err.message : 'Failed to create task');
       setCreating(false);
     }
+  };
+
+  // Handle user changing a member assignment
+  const handleAssignmentChange = (stepIndex: number, memberId: string | null, memberName: string) => {
+    setConfirmedAssignments(prev => {
+      const updated = [...prev];
+      const existing = updated.findIndex(a => a.stepIndex === stepIndex);
+      if (existing >= 0) {
+        updated[existing] = {
+          ...updated[existing],
+          memberId,
+          memberName,
+          isConfirmed: true,
+        };
+      }
+      return updated;
+    });
   };
 
   const hasExtractedData = extractedData && extractedData.pipeline_steps.length > 0;
@@ -196,40 +240,101 @@ export default function AddLogPage() {
                   Due: {formatDate(extractedData.deadline)}
                 </p>
 
-                {/* Pipeline steps */}
+                {/* Pipeline steps with member confirmation */}
                 <div className="space-y-2">
                   {extractedData.pipeline_steps.map((step, i) => {
-                    const match = matchedMembers.find(m => m.step_index === i);
+                    const confirmed = confirmedAssignments.find(a => a.stepIndex === i);
+                    const hasMatch = confirmed?.memberId !== null;
+                    const hasExtractedName = !!step.assigned_to_name;
+
                     return (
                       <div
                         key={i}
                         className={`p-2 rounded-lg text-xs ${
-                          match
+                          hasMatch
                             ? 'bg-teal-50 border border-teal-200'
-                            : step.assigned_to_name
+                            : hasExtractedName
                             ? 'bg-amber-50 border border-amber-200'
                             : 'bg-gray-50 border border-gray-200'
                         }`}
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <p className={`font-medium ${
-                              match ? 'text-teal-800' : step.assigned_to_name ? 'text-amber-800' : 'text-gray-700'
-                            }`}>
-                              {i + 1}. {step.name}
-                            </p>
-                            {(match || step.assigned_to_name) && (
-                              <p className={`mt-0.5 ${
-                                match ? 'text-teal-600' : 'text-amber-600'
-                              }`}>
-                                {match ? match.member_name : `${step.assigned_to_name}?`}
-                              </p>
-                            )}
-                          </div>
-                          <span className="text-gray-400 shrink-0">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <p className={`font-medium flex-1 ${
+                            hasMatch ? 'text-teal-800' : hasExtractedName ? 'text-amber-800' : 'text-gray-700'
+                          }`}>
+                            {i + 1}. {step.name}
+                          </p>
+                          <span className="text-gray-400 shrink-0 text-[10px]">
                             {formatDate(step.mini_deadline)}
                           </span>
                         </div>
+
+                        {/* Member assignment dropdown */}
+                        {hasExtractedName && (
+                          <div className="mt-1.5">
+                            <div className="flex items-center gap-1 mb-1">
+                              <span className="text-[10px] text-gray-500">AI found:</span>
+                              <span className={`text-[10px] font-medium ${hasMatch ? 'text-teal-600' : 'text-amber-600'}`}>
+                                &quot;{step.assigned_to_name}&quot;
+                              </span>
+                              {!hasMatch && (
+                                <span className="text-[10px] text-amber-500">(new)</span>
+                              )}
+                            </div>
+                            <select
+                              value={confirmed?.memberId || '__new__'}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === '__new__') {
+                                  handleAssignmentChange(i, null, step.assigned_to_name || '');
+                                } else {
+                                  const selectedMember = teamMembers.find(m => m.id === val);
+                                  handleAssignmentChange(i, val, selectedMember?.name || '');
+                                }
+                              }}
+                              className={`w-full text-xs p-1.5 rounded border ${
+                                hasMatch
+                                  ? 'border-teal-300 bg-white text-teal-800'
+                                  : 'border-amber-300 bg-white text-amber-800'
+                              } focus:outline-none focus:ring-1 focus:ring-teal-500`}
+                            >
+                              <option value="__new__">
+                                ➕ Create &quot;{step.assigned_to_name}&quot; as new member
+                              </option>
+                              <optgroup label="Existing team members">
+                                {teamMembers.map(m => (
+                                  <option key={m.id} value={m.id}>
+                                    {m.name} {m.name.toLowerCase().includes(step.assigned_to_name?.toLowerCase() || '') ? '✓' : ''}
+                                  </option>
+                                ))}
+                              </optgroup>
+                            </select>
+                          </div>
+                        )}
+
+                        {/* No name extracted - show assignment dropdown */}
+                        {!hasExtractedName && (
+                          <div className="mt-1.5">
+                            <select
+                              value={confirmed?.memberId || ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val) {
+                                  const selectedMember = teamMembers.find(m => m.id === val);
+                                  handleAssignmentChange(i, val, selectedMember?.name || '');
+                                } else {
+                                  handleAssignmentChange(i, null, '');
+                                }
+                              }}
+                              className="w-full text-xs p-1.5 rounded border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                            >
+                              <option value="">No one assigned</option>
+                              {teamMembers.map(m => (
+                                <option key={m.id} value={m.id}>{m.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
