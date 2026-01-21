@@ -163,7 +163,7 @@ export default function DashboardPage() {
                   id: `step-${step.id}`,
                   event_date: stepDate,
                   title: `📌 ${taskPart} - ${stepPart}`,
-                  color: '#f87171', // Faded red for step deadlines
+                  color: '#fca5a5', // Faded red for step deadlines (red-300)
                   source: 'step',
                   task_id: task.id,
                   step_id: step.id,
