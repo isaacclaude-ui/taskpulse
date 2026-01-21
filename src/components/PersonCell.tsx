@@ -66,10 +66,11 @@ export default function PersonCell({
   const allPending = pendingSteps.length === steps.length;
 
   // Non-active cells (completed or all pending) fade into background
+  // Color scheme: Done=grey, Now=green
   const cellClass = allCompleted
-    ? 'bg-green-50 border-l-4 border-green-400 opacity-60'
+    ? 'bg-gray-100 border-l-4 border-gray-400 opacity-60'
     : hasActiveStep
-    ? 'bg-red-50 border-l-4 border-red-400'
+    ? 'bg-green-50 border-l-4 border-green-400'
     : allPending
     ? 'bg-white opacity-50'
     : 'bg-white';
@@ -78,19 +79,20 @@ export default function PersonCell({
   const renderStepCard = (step: PipelineStepWithMember, status: 'completed' | 'active' | 'pending') => {
     const { prevStep, nextStep, isFirst, isLast } = getStepContext(step);
 
+    // Color scheme: Done=grey, Now=green, Coming Soon=blue
     const cardStyles = {
-      completed: 'bg-green-50 border border-green-200',
-      active: 'bg-white border-2 border-red-300 shadow-sm',
+      completed: 'bg-gray-100 border border-gray-300',
+      active: 'bg-white border-2 border-green-400 shadow-sm',
       pending: 'bg-blue-50/50 border border-blue-200 opacity-70',
     };
 
     const statusIcon = {
       completed: (
-        <svg className="w-3 h-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+        <svg className="w-3 h-3 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
         </svg>
       ),
-      active: <span className="text-red-500">●</span>,
+      active: <span className="text-green-500">●</span>,
       pending: (
         <svg className="w-3 h-3 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
@@ -106,7 +108,7 @@ export default function PersonCell({
       >
         {/* DONE watermark for completed steps */}
         {status === 'completed' && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-green-200 text-2xl font-bold tracking-widest rotate-[-15deg] pointer-events-none select-none opacity-70">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-300 text-2xl font-bold tracking-widest rotate-[-15deg] pointer-events-none select-none opacity-70">
             DONE
           </div>
         )}
@@ -114,7 +116,7 @@ export default function PersonCell({
         {/* Before indicator */}
         <div className="text-[9px] text-gray-400 mb-1 relative">
           {isFirst ? (
-            <span className={status === 'completed' ? 'text-green-500' : status === 'active' ? 'text-red-400' : 'text-blue-400'}>● First Step</span>
+            <span className={status === 'completed' ? 'text-gray-500' : status === 'active' ? 'text-green-500' : 'text-blue-400'}>● First Step</span>
           ) : (
             <span>← From: {getPersonName(prevStep)}</span>
           )}
@@ -125,7 +127,7 @@ export default function PersonCell({
           {statusIcon[status]}
           <span
             className={`text-xs font-medium truncate ${
-              status === 'completed' ? 'text-green-700' :
+              status === 'completed' ? 'text-gray-600' :
               status === 'active' ? 'text-gray-900' :
               'text-blue-700'
             }`}
@@ -138,7 +140,7 @@ export default function PersonCell({
         {/* Deadline */}
         {step.mini_deadline && (
           <div className={`text-[10px] mt-0.5 ml-4 relative ${
-            status === 'active' ? 'text-red-500 font-medium' : 'text-gray-500'
+            status === 'active' ? 'text-green-600 font-medium' : 'text-gray-500'
           }`}>
             Due: {new Date(step.mini_deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           </div>
@@ -147,7 +149,7 @@ export default function PersonCell({
         {/* After indicator */}
         <div className="text-[9px] text-gray-400 mt-1 relative">
           {isLast ? (
-            <span className={status === 'completed' ? 'text-green-500' : 'text-green-400'}>● Final Step</span>
+            <span className={status === 'completed' ? 'text-gray-500' : 'text-green-500'}>● Final Step</span>
           ) : (
             <span>→ To: {getPersonName(nextStep)}</span>
           )}
@@ -165,7 +167,7 @@ export default function PersonCell({
 
         {/* Action buttons - only for active step and current user or admin */}
         {status === 'active' && (isCurrentUser || isAdmin) && (
-          <div className="flex gap-1 mt-2 pt-2 border-t border-red-100 relative">
+          <div className="flex gap-1 mt-2 pt-2 border-t border-green-100 relative">
             {!isFirst && !step.is_joint && (
               <button
                 className="flex-1 text-[10px] text-orange-600 border border-orange-300 px-1.5 py-1 rounded hover:bg-orange-50"

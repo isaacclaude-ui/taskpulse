@@ -76,7 +76,7 @@ export default function PipelineGrid({
       <div className="px-4 py-2 bg-gray-50 border-b border-gray-200 flex items-center gap-6 text-xs text-gray-600">
         <span className="font-medium text-gray-500">Status:</span>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+          <span className="w-2.5 h-2.5 rounded-full bg-green-400"></span>
           <span>Now</span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -84,7 +84,7 @@ export default function PipelineGrid({
           <span>Coming Soon</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+          <span className="w-2.5 h-2.5 rounded-full bg-gray-400"></span>
           <span>Done</span>
         </div>
       </div>
