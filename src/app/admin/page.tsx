@@ -69,6 +69,10 @@ export default function AdminPage() {
   const [newLinkTitle, setNewLinkTitle] = useState('');
   const [newLinkDescription, setNewLinkDescription] = useState('');
   const [newLinkUrl, setNewLinkUrl] = useState('');
+  const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
+  const [editingLinkTitle, setEditingLinkTitle] = useState('');
+  const [editingLinkDescription, setEditingLinkDescription] = useState('');
+  const [editingLinkUrl, setEditingLinkUrl] = useState('');
   const [selectedTeamForContent, setSelectedTeamForContent] = useState<string>('');
 
   useEffect(() => {
@@ -463,6 +467,30 @@ export default function AdminPage() {
       loadContent(selectedTeamForContent);
     } catch (error) {
       console.error('Failed to delete shared link:', error);
+    }
+  };
+
+  const handleUpdateSharedLink = async (id: string) => {
+    if (!editingLinkTitle.trim() || !editingLinkUrl.trim()) return;
+    try {
+      const res = await fetch(`/api/shared-links/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: editingLinkTitle.trim(),
+          description: editingLinkDescription.trim() || null,
+          url: editingLinkUrl.trim(),
+        }),
+      });
+      if (res.ok) {
+        setEditingLinkId(null);
+        setEditingLinkTitle('');
+        setEditingLinkDescription('');
+        setEditingLinkUrl('');
+        loadContent(selectedTeamForContent);
+      }
+    } catch (error) {
+      console.error('Failed to update shared link:', error);
     }
   };
 
@@ -1207,34 +1235,98 @@ export default function AdminPage() {
                         ) : (
                           sharedLinks.map((link) => (
                             <div key={link.id} className="bg-white rounded-lg p-3 border border-gray-200">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex-1 min-w-0">
-                                  <a
-                                    href={link.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="font-medium text-teal-600 hover:text-teal-700 text-sm block truncate"
-                                  >
-                                    {link.title}
-                                  </a>
-                                  {link.description && (
-                                    <p className="text-xs text-gray-500 mt-0.5">{link.description}</p>
-                                  )}
-                                  <p className="text-xs text-gray-400 mt-1 truncate">{link.url}</p>
+                              {editingLinkId === link.id ? (
+                                <div className="space-y-2">
+                                  <input
+                                    type="text"
+                                    value={editingLinkTitle}
+                                    onChange={(e) => setEditingLinkTitle(e.target.value)}
+                                    placeholder="Link title"
+                                    className="input-field w-full text-sm"
+                                    autoFocus
+                                  />
+                                  <input
+                                    type="text"
+                                    value={editingLinkDescription}
+                                    onChange={(e) => setEditingLinkDescription(e.target.value)}
+                                    placeholder="Description (optional)"
+                                    className="input-field w-full text-sm"
+                                  />
+                                  <input
+                                    type="url"
+                                    value={editingLinkUrl}
+                                    onChange={(e) => setEditingLinkUrl(e.target.value)}
+                                    placeholder="URL"
+                                    className="input-field w-full text-sm"
+                                  />
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => handleUpdateSharedLink(link.id)}
+                                      className="btn-primary text-xs px-3 py-1"
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setEditingLinkId(null);
+                                        setEditingLinkTitle('');
+                                        setEditingLinkDescription('');
+                                        setEditingLinkUrl('');
+                                      }}
+                                      className="btn-secondary text-xs px-3 py-1"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
                                 </div>
-                                <button
-                                  onClick={() => handleDeleteSharedLink(link.id)}
-                                  className="text-gray-400 hover:text-red-600 p-1 flex-shrink-0"
-                                  title="Delete"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                  </svg>
-                                </button>
-                              </div>
-                              <div className="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-100">
-                                Added by {link.member?.name} • {new Date(link.created_at).toLocaleDateString()}
-                              </div>
+                              ) : (
+                                <>
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="flex-1 min-w-0">
+                                      <a
+                                        href={link.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="font-medium text-teal-600 hover:text-teal-700 text-sm block truncate"
+                                      >
+                                        {link.title}
+                                      </a>
+                                      {link.description && (
+                                        <p className="text-xs text-gray-500 mt-0.5">{link.description}</p>
+                                      )}
+                                      <p className="text-xs text-gray-400 mt-1 truncate">{link.url}</p>
+                                    </div>
+                                    <div className="flex gap-1 flex-shrink-0">
+                                      <button
+                                        onClick={() => {
+                                          setEditingLinkId(link.id);
+                                          setEditingLinkTitle(link.title);
+                                          setEditingLinkDescription(link.description || '');
+                                          setEditingLinkUrl(link.url);
+                                        }}
+                                        className="text-gray-400 hover:text-teal-600 p-1"
+                                        title="Edit"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                        </svg>
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteSharedLink(link.id)}
+                                        className="text-gray-400 hover:text-red-600 p-1"
+                                        title="Delete"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <div className="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-100">
+                                    Added by {link.member?.name} • {new Date(link.created_at).toLocaleDateString()}
+                                  </div>
+                                </>
+                              )}
                             </div>
                           ))
                         )}
