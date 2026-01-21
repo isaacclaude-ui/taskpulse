@@ -30,6 +30,7 @@ export interface Team {
   business_id: string;
   name: string;
   created_at: string;
+  logo_url?: string;
 }
 
 // Member

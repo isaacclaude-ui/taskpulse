@@ -76,6 +76,8 @@ export default function AdminPage() {
   // Team editing
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
   const [editingTeamName, setEditingTeamName] = useState('');
+  const [editingTeamLogoPreview, setEditingTeamLogoPreview] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   // Member name editing
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
@@ -422,6 +424,55 @@ export default function AdminPage() {
     } catch (error) {
       console.error('Failed to delete team:', error);
     }
+  };
+
+  const handleLogoUpload = async (teamId: string, file: File) => {
+    setUploadingLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append('logo', file);
+
+      const res = await fetch(`/api/teams/${teamId}/logo`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setEditingTeamLogoPreview(data.logo_url);
+        loadData();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to upload logo');
+      }
+    } catch (error) {
+      console.error('Failed to upload logo:', error);
+      alert('Failed to upload logo');
+    }
+    setUploadingLogo(false);
+  };
+
+  const handleLogoRemove = async (teamId: string) => {
+    if (!confirm('Remove this team logo?')) return;
+
+    setUploadingLogo(true);
+    try {
+      const res = await fetch(`/api/teams/${teamId}/logo`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        setEditingTeamLogoPreview(null);
+        loadData();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to remove logo');
+      }
+    } catch (error) {
+      console.error('Failed to remove logo:', error);
+      alert('Failed to remove logo');
+    }
+    setUploadingLogo(false);
   };
 
   const handleApproveUser = async () => {
@@ -1203,42 +1254,121 @@ export default function AdminPage() {
                       <div key={team.id} className="py-3 flex items-center justify-between">
                         <div className="flex-1">
                           {isEditing ? (
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="text"
-                                value={editingTeamName}
-                                onChange={(e) => setEditingTeamName(e.target.value)}
-                                className="input-field flex-1"
-                                autoFocus
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') handleUpdateTeam(team.id);
-                                  if (e.key === 'Escape') {
+                            <>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  value={editingTeamName}
+                                  onChange={(e) => setEditingTeamName(e.target.value)}
+                                  className="input-field flex-1"
+                                  autoFocus
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleUpdateTeam(team.id);
+                                    if (e.key === 'Escape') {
+                                      setEditingTeamId(null);
+                                      setEditingTeamName('');
+                                    }
+                                  }}
+                                />
+                                <button
+                                  onClick={() => handleUpdateTeam(team.id)}
+                                  className="btn-primary text-sm px-3 py-1"
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  onClick={() => {
                                     setEditingTeamId(null);
                                     setEditingTeamName('');
-                                  }
-                                }}
-                              />
-                              <button
-                                onClick={() => handleUpdateTeam(team.id)}
-                                className="btn-primary text-sm px-3 py-1"
-                              >
-                                Save
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setEditingTeamId(null);
-                                  setEditingTeamName('');
-                                }}
-                                className="btn-secondary text-sm px-3 py-1"
-                              >
-                                Cancel
-                              </button>
+                                    setEditingTeamLogoPreview(null);
+                                  }}
+                                  className="btn-secondary text-sm px-3 py-1"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+
+                              {/* Logo Upload Section */}
+                              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Team Logo
+                              </label>
+                              <div className="flex items-center gap-4">
+                                {/* Logo Preview */}
+                                <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-200 flex items-center justify-center">
+                                  {editingTeamLogoPreview ? (
+                                    <img
+                                      src={editingTeamLogoPreview}
+                                      alt="Team logo"
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                  )}
+                                </div>
+
+                                {/* Upload Controls */}
+                                <div className="flex flex-col gap-2">
+                                  <label className="btn-secondary text-sm px-3 py-1 cursor-pointer inline-flex items-center gap-1">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                    </svg>
+                                    {uploadingLogo ? 'Uploading...' : 'Choose File'}
+                                    <input
+                                      type="file"
+                                      accept="image/png,image/jpeg,image/webp"
+                                      className="hidden"
+                                      disabled={uploadingLogo}
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                          handleLogoUpload(team.id, file);
+                                        }
+                                        e.target.value = '';
+                                      }}
+                                    />
+                                  </label>
+                                  {editingTeamLogoPreview && (
+                                    <button
+                                      onClick={() => handleLogoRemove(team.id)}
+                                      disabled={uploadingLogo}
+                                      className="text-red-600 hover:text-red-700 text-sm flex items-center gap-1"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      </svg>
+                                      Remove
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                              <p className="text-xs text-gray-500 mt-2">
+                                PNG, JPG, or WebP. Max 1MB. Recommended: 200x200px
+                              </p>
                             </div>
-                          ) : (
-                            <>
-                              <div className="font-medium text-gray-900">{team.name}</div>
-                              <div className="text-sm text-gray-500">{teamMembers.length} member{teamMembers.length !== 1 ? 's' : ''}</div>
                             </>
+                          ) : (
+                            <div className="flex items-center gap-3">
+                              {team.logo_url ? (
+                                <img
+                                  src={team.logo_url}
+                                  alt={team.name}
+                                  className="w-10 h-10 rounded-lg object-cover"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                  </svg>
+                                </div>
+                              )}
+                              <div>
+                                <div className="font-medium text-gray-900">{team.name}</div>
+                                <div className="text-sm text-gray-500">{teamMembers.length} member{teamMembers.length !== 1 ? 's' : ''}</div>
+                              </div>
+                            </div>
                           )}
                         </div>
                         {!isEditing && (
@@ -1247,6 +1377,7 @@ export default function AdminPage() {
                               onClick={() => {
                                 setEditingTeamId(team.id);
                                 setEditingTeamName(team.name);
+                                setEditingTeamLogoPreview(team.logo_url || null);
                               }}
                               className="text-gray-400 hover:text-teal-600 p-1"
                               title="Edit team"

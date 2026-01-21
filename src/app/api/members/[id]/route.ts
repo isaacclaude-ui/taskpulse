@@ -70,9 +70,45 @@ export async function DELETE(
     }
 
     // Safe to delete - no active assignments
-    // Delete member_teams entries first
+    // First, unassign member from ALL pipeline steps (including completed ones)
+    await supabase
+      .from('pipeline_steps')
+      .update({ assigned_to: null })
+      .eq('assigned_to', id);
+
+    // Remove from additional_assignees arrays (for joint tasks)
+    const { data: stepsWithAdditional } = await supabase
+      .from('pipeline_steps')
+      .select('id, additional_assignees')
+      .contains('additional_assignees', [id]);
+
+    if (stepsWithAdditional && stepsWithAdditional.length > 0) {
+      for (const step of stepsWithAdditional) {
+        const updatedAssignees = (step.additional_assignees || []).filter(
+          (assigneeId: string) => assigneeId !== id
+        );
+        await supabase
+          .from('pipeline_steps')
+          .update({ additional_assignees: updatedAssignees.length > 0 ? updatedAssignees : null })
+          .eq('id', step.id);
+      }
+    }
+
+    // Delete member_teams entries
     await supabase
       .from('member_teams')
+      .delete()
+      .eq('member_id', id);
+
+    // Delete notifications for this member
+    await supabase
+      .from('notifications')
+      .delete()
+      .eq('member_id', id);
+
+    // Delete step comments by this member
+    await supabase
+      .from('step_comments')
       .delete()
       .eq('member_id', id);
 
