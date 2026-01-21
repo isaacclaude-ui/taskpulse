@@ -149,9 +149,9 @@ export default function DashboardSummary({ tasks, members }: DashboardSummaryPro
                       key={i}
                       className={`h-1.5 flex-1 rounded-full transition-all ${
                         isCompleted
-                          ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
+                          ? 'bg-gradient-to-r from-gray-300 to-gray-400'
                           : isCurrent
-                          ? 'bg-gradient-to-r from-amber-400 to-orange-400 animate-pulse'
+                          ? 'bg-gradient-to-r from-green-400 to-green-500 animate-pulse'
                           : 'bg-slate-200'
                       }`}
                     />
@@ -192,7 +192,7 @@ export default function DashboardSummary({ tasks, members }: DashboardSummaryPro
                 key={stat.id}
                 className={`rounded-md p-2 w-[calc(50%-3px)] sm:w-[calc(25%-4px)] md:w-[calc(16.666%-5px)] lg:w-[115px] transition-all ${
                   isUrgent
-                    ? 'bg-orange-100 border-2 border-orange-400'
+                    ? 'bg-green-100 border-2 border-green-400'
                     : 'bg-white border border-slate-200'
                 }`}
               >
@@ -202,7 +202,7 @@ export default function DashboardSummary({ tasks, members }: DashboardSummaryPro
                 <div className="flex flex-col gap-0 text-[10px]">
                   <div className="flex items-center justify-between">
                     <span className="text-slate-500">Now</span>
-                    <span className={`font-semibold ${isUrgent ? 'text-orange-600' : 'text-slate-400'}`}>{stat.now}</span>
+                    <span className={`font-semibold ${isUrgent ? 'text-green-600' : 'text-slate-400'}`}>{stat.now}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-slate-500">Next</span>
