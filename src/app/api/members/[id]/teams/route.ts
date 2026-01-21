@@ -9,20 +9,33 @@ export async function GET(
   try {
     const { id } = await context.params;
 
-    const { data: memberTeams, error } = await supabase
+    // First get team IDs for this member
+    const { data: memberTeams, error: mtError } = await supabase
       .from('member_teams')
-      .select('team_id, teams:team_id(id, name, business_id)')
+      .select('team_id')
       .eq('member_id', id);
 
-    if (error) {
-      console.error('Error fetching member teams:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (mtError) {
+      console.error('Error fetching member_teams:', mtError);
+      return NextResponse.json({ error: mtError.message }, { status: 500 });
     }
 
-    console.log('Raw member teams data:', JSON.stringify(memberTeams, null, 2));
+    const teamIds = memberTeams?.map(mt => mt.team_id) || [];
 
-    // Extract teams from the join result
-    const teams = memberTeams?.map(mt => (mt as { teams: { id: string; name: string; business_id: string } }).teams).filter(Boolean) || [];
+    if (teamIds.length === 0) {
+      return NextResponse.json({ teams: [] });
+    }
+
+    // Then fetch the actual team data
+    const { data: teams, error: teamsError } = await supabase
+      .from('teams')
+      .select('id, name, business_id')
+      .in('id', teamIds);
+
+    if (teamsError) {
+      console.error('Error fetching teams:', teamsError);
+      return NextResponse.json({ error: teamsError.message }, { status: 500 });
+    }
 
     return NextResponse.json({ teams });
   } catch (error) {
