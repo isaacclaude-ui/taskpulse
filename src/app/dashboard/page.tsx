@@ -291,49 +291,6 @@ export default function DashboardPage() {
     }
   };
 
-  // Inline update handlers for task title/deadline
-  const handleTaskUpdate = async (taskId: string, updates: { title?: string; deadline?: string | null }) => {
-    try {
-      const res = await fetch(`/api/tasks/${taskId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-      });
-
-      if (res.ok) {
-        // Update local state without full reload (convert null to undefined for type safety)
-        const safeUpdates: { title?: string; deadline?: string } = {};
-        if (updates.title !== undefined) safeUpdates.title = updates.title;
-        if (updates.deadline !== undefined) safeUpdates.deadline = updates.deadline || undefined;
-        setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...safeUpdates } : t));
-      } else {
-        console.error('Failed to update task');
-      }
-    } catch (error) {
-      console.error('Update task error:', error);
-    }
-  };
-
-  // Inline update handlers for step name/deadline
-  const handleStepUpdate = async (stepId: string, updates: { name?: string; mini_deadline?: string | null }) => {
-    try {
-      const res = await fetch(`/api/steps/${stepId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-      });
-
-      if (res.ok) {
-        // Reload to get updated step data
-        loadDashboard();
-      } else {
-        console.error('Failed to update step');
-      }
-    } catch (error) {
-      console.error('Update step error:', error);
-    }
-  };
-
   const handleStepComplete = async (stepId: string) => {
     try {
       const res = await fetch(`/api/steps/${stepId}/complete`, {
@@ -882,8 +839,6 @@ export default function DashboardPage() {
             onTaskDelete={handleTaskDelete}
             onTaskDuplicate={handleTaskDuplicate}
             onTaskReopen={handleTaskReopen}
-            onTaskUpdate={handleTaskUpdate}
-            onStepUpdate={handleStepUpdate}
             currentMemberId={member?.id}
             isAdmin={member?.role === 'admin'}
             isCompletedView={filter === 'completed'}

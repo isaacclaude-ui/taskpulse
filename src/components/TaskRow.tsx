@@ -30,8 +30,6 @@ interface TaskRowProps {
   onTaskDelete: (taskId: string) => void;
   onTaskDuplicate?: (taskId: string) => void;
   onTaskReopen?: (taskId: string) => void;
-  onTaskUpdate?: (taskId: string, updates: { title?: string; deadline?: string | null }) => void;
-  onStepUpdate?: (stepId: string, updates: { name?: string; mini_deadline?: string | null }) => void;
   currentMemberId?: string;
   isAdmin?: boolean;
   isCompletedView?: boolean;
@@ -48,32 +46,12 @@ export default function TaskRow({
   onTaskDelete,
   onTaskDuplicate,
   onTaskReopen,
-  onTaskUpdate,
-  onStepUpdate,
   currentMemberId,
   isAdmin = false,
   isCompletedView = false
 }: TaskRowProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [editingTitle, setEditingTitle] = useState(false);
-  const [editingDeadline, setEditingDeadline] = useState(false);
-  const [titleValue, setTitleValue] = useState(task.title);
-  const [deadlineValue, setDeadlineValue] = useState(task.deadline || '');
-  const hasDeadline = task.deadline && new Date(task.deadline) < new Date();
-
-  const handleTitleSave = () => {
-    if (titleValue.trim() && titleValue !== task.title && onTaskUpdate) {
-      onTaskUpdate(task.id, { title: titleValue.trim() });
-    }
-    setEditingTitle(false);
-  };
-
-  const handleDeadlineSave = () => {
-    if (onTaskUpdate) {
-      onTaskUpdate(task.id, { deadline: deadlineValue || null });
-    }
-    setEditingDeadline(false);
-  };
+  const isOverdue = task.deadline && new Date(task.deadline) < new Date();
 
   // Group steps by assigned person (including joint assignments)
   const stepsByPerson = new Map<string, PipelineStepWithMember[]>();
@@ -117,87 +95,35 @@ export default function TaskRow({
       >
         <div className="flex items-start gap-2">
           <div className="flex-1 min-w-0">
-            {/* Editable Title */}
-            {editingTitle ? (
-              <div className="flex items-center gap-1 -m-1">
-                <input
-                  type="text"
-                  value={titleValue}
-                  onChange={(e) => setTitleValue(e.target.value)}
-                  onBlur={handleTitleSave}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleTitleSave();
-                    if (e.key === 'Escape') { setTitleValue(task.title); setEditingTitle(false); }
-                  }}
-                  className="flex-1 text-xs font-medium px-1.5 py-1 border border-teal-300 rounded focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  autoFocus
-                />
-              </div>
-            ) : (
-              <div
-                className="flex items-start gap-1 cursor-pointer hover:bg-teal-50 -m-1 p-1 rounded transition-colors group"
-                onClick={() => { setTitleValue(task.title); setEditingTitle(true); }}
-                title="Click to edit title"
-              >
-                <span className="font-medium text-gray-900 text-xs leading-tight line-clamp-2">
-                  {task.title}
-                </span>
-                {task.recurrence?.enabled && (
-                  <span className="flex items-center gap-0.5 text-teal-600 shrink-0" title={formatRecurrenceShort(task.recurrence)}>
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    {task.recurrence_count && task.recurrence_count > 0 && (
-                      <span className="text-[9px] font-normal">#{task.recurrence_count + 1}</span>
-                    )}
-                  </span>
-                )}
-                <svg className="w-3 h-3 text-gray-300 group-hover:text-gray-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                </svg>
-              </div>
-            )}
-            {/* Editable Deadline */}
-            {editingDeadline ? (
-              <div className="flex items-center gap-1 mt-1">
-                <input
-                  type="date"
-                  value={deadlineValue}
-                  onChange={(e) => setDeadlineValue(e.target.value)}
-                  onBlur={handleDeadlineSave}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleDeadlineSave();
-                    if (e.key === 'Escape') { setDeadlineValue(task.deadline || ''); setEditingDeadline(false); }
-                  }}
-                  className="text-xs px-1.5 py-0.5 border border-teal-300 rounded focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  autoFocus
-                />
-                <button
-                  onClick={() => { setDeadlineValue(''); handleDeadlineSave(); }}
-                  className="text-gray-400 hover:text-red-500 p-0.5"
-                  title="Clear deadline"
-                >
+            {/* Title - clickable to open AI editor */}
+            <div
+              className="flex items-start gap-1 cursor-pointer hover:bg-teal-50 -m-1 p-1 rounded transition-colors group"
+              onClick={() => onTaskEdit(task.id)}
+              title="Click to edit with AI"
+            >
+              <span className="font-medium text-gray-900 text-xs leading-tight line-clamp-2">
+                {task.title}
+              </span>
+              {task.recurrence?.enabled && (
+                <span className="flex items-center gap-0.5 text-teal-600 shrink-0" title={formatRecurrenceShort(task.recurrence)}>
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
-                </button>
-              </div>
-            ) : (
-              <div
-                className="text-xs mt-1 cursor-pointer hover:bg-teal-50 inline-flex items-center gap-1 px-1 -mx-1 rounded transition-colors group"
-                onClick={() => { setDeadlineValue(task.deadline || ''); setEditingDeadline(true); }}
-                title="Click to edit deadline"
-              >
-                {task.deadline ? (
-                  <span className={hasDeadline ? 'text-red-600' : 'text-gray-500'}>
-                    Due: {new Date(task.deadline).toLocaleDateString()}
-                  </span>
-                ) : (
-                  <span className="text-gray-400">+ Add deadline</span>
-                )}
-                <svg className="w-3 h-3 text-gray-300 group-hover:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+                  {task.recurrence_count && task.recurrence_count > 0 && (
+                    <span className="text-[9px] font-normal">#{task.recurrence_count + 1}</span>
+                  )}
+                </span>
+              )}
+              <svg className="w-3 h-3 text-gray-300 group-hover:text-teal-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+            </div>
+            {/* Deadline display */}
+            {task.deadline && (
+              <div className="text-xs mt-1 px-1 -mx-1">
+                <span className={isOverdue ? 'text-red-600' : 'text-gray-500'}>
+                  Due: {new Date(task.deadline).toLocaleDateString()}
+                </span>
               </div>
             )}
             {/* AI-generated workflow summary - clickable to open AI editor */}

@@ -36,12 +36,6 @@ export default function StepDetailModal({
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Inline editing state
-  const [editingName, setEditingName] = useState(false);
-  const [editingDeadline, setEditingDeadline] = useState(false);
-  const [nameValue, setNameValue] = useState('');
-  const [deadlineValue, setDeadlineValue] = useState('');
-
   useEffect(() => {
     if (isOpen && stepId) {
       loadStepDetails();
@@ -68,53 +62,6 @@ export default function StepDetailModal({
     }
 
     setLoading(false);
-  };
-
-  // Handler for saving step name
-  const handleSaveName = async () => {
-    if (!step || !nameValue.trim() || nameValue === step.name) {
-      setEditingName(false);
-      return;
-    }
-    try {
-      const res = await fetch(`/api/steps/${stepId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: nameValue.trim() }),
-      });
-      if (!res.ok) throw new Error('Failed to update');
-      setStep({ ...step, name: nameValue.trim() });
-      onStepCompleted(); // Refresh the dashboard
-    } catch (err) {
-      setError('Failed to update step name');
-    }
-    setEditingName(false);
-  };
-
-  // Handler for saving step deadline
-  const handleSaveDeadline = async () => {
-    if (!step) {
-      setEditingDeadline(false);
-      return;
-    }
-    const newDeadline = deadlineValue || undefined;
-    if (newDeadline === step.mini_deadline) {
-      setEditingDeadline(false);
-      return;
-    }
-    try {
-      const res = await fetch(`/api/steps/${stepId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mini_deadline: newDeadline || null }),
-      });
-      if (!res.ok) throw new Error('Failed to update');
-      setStep({ ...step, mini_deadline: newDeadline });
-      onStepCompleted(); // Refresh the dashboard
-    } catch (err) {
-      setError('Failed to update deadline');
-    }
-    setEditingDeadline(false);
   };
 
   const handleComplete = async () => {
@@ -252,34 +199,9 @@ export default function StepDetailModal({
             {/* Header */}
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1 mr-4">
-                {/* Editable step name */}
-                {editingName ? (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={nameValue}
-                      onChange={(e) => setNameValue(e.target.value)}
-                      onBlur={handleSaveName}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleSaveName();
-                        if (e.key === 'Escape') { setNameValue(step.name); setEditingName(false); }
-                      }}
-                      className="flex-1 text-xl font-bold px-2 py-1 border border-teal-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      autoFocus
-                    />
-                  </div>
-                ) : (
-                  <h2
-                    className="text-xl font-bold text-gray-900 cursor-pointer hover:bg-teal-50 px-2 py-1 -mx-2 -my-1 rounded transition-colors group inline-flex items-center gap-2"
-                    onClick={() => { setNameValue(step.name); setEditingName(true); }}
-                    title="Click to edit step name"
-                  >
-                    {step.name}
-                    <svg className="w-4 h-4 text-gray-300 group-hover:text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
-                  </h2>
-                )}
+                <h2 className="text-xl font-bold text-gray-900">
+                  {step.name}
+                </h2>
                 <span className={`status-badge status-badge-${step.status} mt-2`}>
                   {step.status === 'locked' && 'Locked'}
                   {step.status === 'unlocked' && 'In Progress'}
@@ -301,52 +223,14 @@ export default function StepDetailModal({
                   <span className="ml-2 text-sm font-medium">{step.member.name}</span>
                 </div>
               )}
-              {/* Editable deadline */}
-              <div>
-                <span className="text-sm text-gray-500">Deadline:</span>
-                {editingDeadline ? (
-                  <span className="ml-2 inline-flex items-center gap-2">
-                    <input
-                      type="date"
-                      value={deadlineValue}
-                      onChange={(e) => setDeadlineValue(e.target.value)}
-                      onBlur={handleSaveDeadline}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleSaveDeadline();
-                        if (e.key === 'Escape') { setDeadlineValue(step.mini_deadline || ''); setEditingDeadline(false); }
-                      }}
-                      className="text-sm px-2 py-1 border border-teal-300 rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      autoFocus
-                    />
-                    {deadlineValue && (
-                      <button
-                        onClick={() => { setDeadlineValue(''); handleSaveDeadline(); }}
-                        className="text-gray-400 hover:text-red-500 p-1"
-                        title="Clear deadline"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    )}
+              {step.mini_deadline && (
+                <div>
+                  <span className="text-sm text-gray-500">Deadline:</span>
+                  <span className="ml-2 text-sm font-medium">
+                    {new Date(step.mini_deadline).toLocaleDateString()}
                   </span>
-                ) : (
-                  <span
-                    className="ml-2 text-sm font-medium cursor-pointer hover:bg-teal-50 px-2 py-1 -my-1 rounded transition-colors group inline-flex items-center gap-1"
-                    onClick={() => { setDeadlineValue(step.mini_deadline || ''); setEditingDeadline(true); }}
-                    title="Click to edit deadline"
-                  >
-                    {step.mini_deadline ? (
-                      new Date(step.mini_deadline).toLocaleDateString()
-                    ) : (
-                      <span className="text-gray-400">+ Add deadline</span>
-                    )}
-                    <svg className="w-3 h-3 text-gray-300 group-hover:text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </span>
-                )}
-              </div>
+                </div>
+              )}
               {step.completed_at && (
                 <div>
                   <span className="text-sm text-gray-500">Completed:</span>

@@ -83,6 +83,10 @@ export default function AdminPage() {
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [editingMemberName, setEditingMemberName] = useState('');
 
+  // Member email editing
+  const [editingMemberEmailId, setEditingMemberEmailId] = useState<string | null>(null);
+  const [editingMemberEmail, setEditingMemberEmail] = useState('');
+
   // Member filtering
   const [memberTeamFilter, setMemberTeamFilter] = useState<string>('all');
 
@@ -287,6 +291,21 @@ export default function AdminPage() {
       loadData();
     } catch (error) {
       console.error('Failed to update member name:', error);
+    }
+  };
+
+  const handleUpdateMemberEmail = async (memberId: string) => {
+    try {
+      await fetch(`/api/members/${memberId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: editingMemberEmail.trim() || null }),
+      });
+      setEditingMemberEmailId(null);
+      setEditingMemberEmail('');
+      loadData();
+    } catch (error) {
+      console.error('Failed to update member email:', error);
     }
   };
 
@@ -1024,8 +1043,8 @@ export default function AdminPage() {
                     <thead>
                       <tr className="border-b border-gray-200">
                         <th className="text-left py-3 px-3 text-sm font-medium text-gray-600 w-[140px]">Name</th>
-                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-600 w-[200px]">Teams</th>
                         <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Email</th>
+                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-600 w-[200px]">Teams</th>
                         <th className="text-left py-3 px-3 text-sm font-medium text-gray-600 w-[100px]">Role</th>
                         <th className="text-center py-3 px-3 text-sm font-medium text-gray-600 w-[100px]">Actions</th>
                       </tr>
@@ -1080,21 +1099,56 @@ export default function AdminPage() {
                               </div>
                             )}
                           </td>
-                          {/* Teams column - dropdown selector */}
+                          {/* Email column - editable */}
+                          <td className="py-3 px-3">
+                            {editingMemberEmailId === m.id ? (
+                              <div className="flex items-center gap-1">
+                                <input
+                                  type="email"
+                                  value={editingMemberEmail}
+                                  onChange={(e) => setEditingMemberEmail(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleUpdateMemberEmail(m.id);
+                                    if (e.key === 'Escape') {
+                                      setEditingMemberEmailId(null);
+                                      setEditingMemberEmail('');
+                                    }
+                                  }}
+                                  placeholder="email@example.com"
+                                  className="input-field text-sm py-1 px-2 w-full"
+                                  autoFocus
+                                />
+                                <button onClick={() => handleUpdateMemberEmail(m.id)} className="text-teal-600 hover:text-teal-700 p-1" title="Save">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => { setEditingMemberEmailId(m.id); setEditingMemberEmail(m.email || ''); }}
+                                className="text-sm text-gray-600 hover:text-teal-600 truncate block text-left w-full"
+                                title={m.email || 'Click to add email'}
+                              >
+                                {m.email || <span className="text-gray-400">+ Add email</span>}
+                              </button>
+                            )}
+                          </td>
+                          {/* Teams column - dropdown selector, 1 line */}
                           <td className="py-3 px-3">
                             <div className="relative group">
-                              <div className="flex flex-wrap gap-1 min-h-[24px]">
+                              <div className="flex flex-nowrap gap-1 min-h-[24px] overflow-hidden">
                                 {memberTeams.length > 0 ? (
-                                  memberTeams.slice(0, 4).map(t => (
-                                    <span key={t.id} className="text-xs bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded truncate max-w-[80px]" title={t.name}>
+                                  memberTeams.slice(0, 3).map(t => (
+                                    <span key={t.id} className="text-xs bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded truncate max-w-[60px] shrink-0" title={t.name}>
                                       {t.name}
                                     </span>
                                   ))
                                 ) : (
                                   <span className="text-xs text-gray-400">None</span>
                                 )}
-                                {memberTeams.length > 4 && (
-                                  <span className="text-xs text-gray-500">+{memberTeams.length - 4}</span>
+                                {memberTeams.length > 3 && (
+                                  <span className="text-xs text-gray-500 shrink-0">+{memberTeams.length - 3}</span>
                                 )}
                               </div>
                               {/* Dropdown on hover */}
@@ -1123,14 +1177,6 @@ export default function AdminPage() {
                                 </div>
                               </div>
                             </div>
-                          </td>
-                          {/* Email column */}
-                          <td className="py-3 px-3">
-                            {m.email ? (
-                              <span className="text-sm text-gray-600 truncate block" title={m.email}>{m.email}</span>
-                            ) : (
-                              <span className="text-sm text-gray-400">—</span>
-                            )}
                           </td>
                           {/* Role column */}
                           <td className="py-3 px-3">
