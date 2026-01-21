@@ -311,10 +311,24 @@ export default function TaskEditModal({
             <div className="flex-1 overflow-y-auto p-3 min-h-0">
               {extractedData && (
                 <>
-                  <h4 className="font-medium text-gray-900 text-sm">{extractedData.title}</h4>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Due: {formatDate(extractedData.deadline)}
-                  </p>
+                  {/* Editable Title */}
+                  <input
+                    type="text"
+                    value={extractedData.title}
+                    onChange={(e) => setExtractedData({ ...extractedData, title: e.target.value })}
+                    className="font-medium text-gray-900 text-sm w-full bg-transparent border border-transparent hover:border-gray-300 focus:border-teal-500 focus:outline-none rounded px-1 py-0.5 -mx-1"
+                    placeholder="Pipeline title"
+                  />
+                  {/* Editable Deadline */}
+                  <div className="flex items-center gap-1 mt-1">
+                    <span className="text-xs text-gray-500">Due:</span>
+                    <input
+                      type="date"
+                      value={extractedData.deadline || ''}
+                      onChange={(e) => setExtractedData({ ...extractedData, deadline: e.target.value || undefined })}
+                      className="text-xs text-gray-700 bg-transparent border border-transparent hover:border-gray-300 focus:border-teal-500 focus:outline-none rounded px-1 py-0.5"
+                    />
+                  </div>
 
                   {/* Recurrence dropdown */}
                   <div className="mt-2">
@@ -414,7 +428,7 @@ export default function TaskEditModal({
                           key={i}
                           className={`p-2 rounded text-xs ${
                             isCompleted
-                              ? 'bg-emerald-50 border border-emerald-200'
+                              ? 'bg-gray-100 border border-gray-200 opacity-60'
                               : hasMatch
                               ? 'bg-teal-50 border border-teal-200'
                               : hasExtractedName
@@ -423,21 +437,46 @@ export default function TaskEditModal({
                           }`}
                         >
                           <div className="flex items-start justify-between gap-2 mb-1">
-                            <p className={`font-medium flex-1 ${
-                              isCompleted ? 'text-emerald-700 line-through' :
-                              hasMatch ? 'text-teal-800' :
-                              hasExtractedName ? 'text-amber-800' : 'text-gray-700'
-                            }`}>
-                              {i + 1}. {step.name}
+                            <div className="flex items-center gap-1 flex-1 min-w-0">
+                              <span className={`font-medium shrink-0 ${isCompleted ? 'text-gray-500' : 'text-gray-700'}`}>
+                                {i + 1}.
+                              </span>
+                              <input
+                                type="text"
+                                value={step.name}
+                                onChange={(e) => {
+                                  if (isLocked) return;
+                                  const updated = [...extractedData.pipeline_steps];
+                                  updated[i] = { ...updated[i], name: e.target.value };
+                                  setExtractedData({ ...extractedData, pipeline_steps: updated });
+                                }}
+                                disabled={isLocked}
+                                className={`font-medium flex-1 min-w-0 bg-transparent border border-transparent hover:border-gray-300 focus:border-teal-500 focus:outline-none rounded px-1 py-0.5 ${
+                                  isCompleted ? 'text-gray-500 cursor-not-allowed' :
+                                  hasMatch ? 'text-teal-800' :
+                                  hasExtractedName ? 'text-amber-800' : 'text-gray-700'
+                                }`}
+                              />
                               {isCompleted && (
-                                <span className="ml-2 text-[10px] font-normal bg-emerald-200 text-emerald-700 px-1.5 py-0.5 rounded">
+                                <span className="text-[10px] font-medium bg-gray-300 text-gray-600 px-1.5 py-0.5 rounded shrink-0">
                                   DONE
                                 </span>
                               )}
-                            </p>
-                            <span className="text-gray-400 shrink-0 text-[10px]">
-                              {formatDate(step.mini_deadline)}
-                            </span>
+                            </div>
+                            <input
+                              type="date"
+                              value={step.mini_deadline || ''}
+                              onChange={(e) => {
+                                if (isLocked) return;
+                                const updated = [...extractedData.pipeline_steps];
+                                updated[i] = { ...updated[i], mini_deadline: e.target.value || undefined };
+                                setExtractedData({ ...extractedData, pipeline_steps: updated });
+                              }}
+                              disabled={isLocked}
+                              className={`text-[10px] shrink-0 bg-transparent border border-transparent hover:border-gray-300 focus:border-teal-500 focus:outline-none rounded px-1 ${
+                                isLocked ? 'text-gray-400 cursor-not-allowed' : 'text-gray-500'
+                              }`}
+                            />
                           </div>
 
                           {/* Member assignment dropdown - same as add-log */}
