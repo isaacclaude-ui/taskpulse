@@ -63,11 +63,15 @@ export default function PersonCell({
   // Determine cell status for styling
   const hasActiveStep = !!currentStep;
   const allCompleted = completedSteps.length === steps.length;
+  const allPending = pendingSteps.length === steps.length;
 
+  // Non-active cells (completed or all pending) fade into background
   const cellClass = allCompleted
-    ? 'bg-green-50 border-l-4 border-green-400'
+    ? 'bg-green-50 border-l-4 border-green-400 opacity-60'
     : hasActiveStep
     ? 'bg-red-50 border-l-4 border-red-400'
+    : allPending
+    ? 'bg-white opacity-50'
     : 'bg-white';
 
   // Render a step card (used for all states)
