@@ -26,12 +26,32 @@ interface TaskEditModalProps {
   onTaskUpdated: () => void;
 }
 
-// Helper to format dates
+// Helper to format dates for display
 function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return 'N/A';
   const date = new Date(dateStr);
   if (isNaN(date.getTime())) return 'N/A';
   return date.toLocaleDateString();
+}
+
+// Helper to convert date to YYYY-MM-DD for input fields
+function toInputDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return '';
+  return date.toISOString().split('T')[0];
+}
+
+// Normalize extracted data dates to YYYY-MM-DD format for inputs
+function normalizeExtractedDates(data: ExtractedTaskData): ExtractedTaskData {
+  return {
+    ...data,
+    deadline: toInputDate(data.deadline),
+    pipeline_steps: data.pipeline_steps.map(step => ({
+      ...step,
+      mini_deadline: toInputDate(step.mini_deadline),
+    })),
+  };
 }
 
 // Helper to format recurrence for display
@@ -83,7 +103,7 @@ export default function TaskEditModal({
   useEffect(() => {
     if (isOpen && task) {
       // Convert task to extracted data format
-      const initialData: ExtractedTaskData = {
+      const rawData: ExtractedTaskData = {
         title: task.title,
         conclusion: task.conclusion,
         deadline: task.deadline,
@@ -98,7 +118,8 @@ export default function TaskEditModal({
         })),
         confidence: 'high',
       };
-      setExtractedData(initialData);
+      // Normalize dates to YYYY-MM-DD for input fields
+      setExtractedData(normalizeExtractedDates(rawData));
 
       // Initialize recurrence from task
       setRecurrence(task.recurrence || null);
@@ -221,8 +242,8 @@ export default function TaskEditModal({
       const aiMessage: ChatMessage = { role: 'assistant', content: data.ai_message };
       setMessages([...updatedMessages, aiMessage]);
 
-      // Update extraction state
-      setExtractedData(data.extracted_data);
+      // Update extraction state (normalize dates for input fields)
+      setExtractedData(normalizeExtractedDates(data.extracted_data));
       setMatchedMembers(data.matched_members || []);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to process message');
