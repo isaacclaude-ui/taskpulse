@@ -4,10 +4,18 @@ import { useEffect, useState } from 'react';
 
 interface LoadingScreenProps {
   message?: string;
+  delay?: number; // Delay before showing (prevents flicker on fast loads)
 }
 
-export default function LoadingScreen({ message = 'Loading' }: LoadingScreenProps) {
+export default function LoadingScreen({ message = 'Loading', delay = 400 }: LoadingScreenProps) {
   const [dots, setDots] = useState('');
+  const [show, setShow] = useState(false);
+
+  // Only show loading screen after delay (prevents flicker on fast page loads)
+  useEffect(() => {
+    const timer = setTimeout(() => setShow(true), delay);
+    return () => clearTimeout(timer);
+  }, [delay]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -15,6 +23,9 @@ export default function LoadingScreen({ message = 'Loading' }: LoadingScreenProp
     }, 400);
     return () => clearInterval(interval);
   }, []);
+
+  // Don't render anything until delay has passed
+  if (!show) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-600 via-teal-500 to-emerald-500 flex items-center justify-center">
