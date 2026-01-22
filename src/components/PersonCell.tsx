@@ -46,8 +46,8 @@ export default function PersonCell({
   // No steps assigned to this person for this task
   if (steps.length === 0) {
     return (
-      <div className="bg-gradient-to-b from-gray-50/30 to-gray-50/60 min-h-[100px] p-2 flex items-center justify-center border-l border-gray-100/80">
-        <span className="text-gray-200 text-2xl">—</span>
+      <div className="bg-gray-50/30 min-h-[100px] p-2 flex items-center justify-center">
+        <span className="text-gray-200 text-xl">—</span>
       </div>
     );
   }
@@ -68,9 +68,9 @@ export default function PersonCell({
   // Non-active cells (completed or all pending) fade into background
   // Color scheme: Done=grey, Now=green
   const cellClass = allCompleted
-    ? 'bg-gray-100 border-l-4 border-gray-400 opacity-60'
+    ? 'bg-gray-50 opacity-60'
     : hasActiveStep
-    ? 'bg-green-50 border-l-4 border-green-400'
+    ? 'bg-gradient-to-br from-green-50 to-emerald-50'
     : allPending
     ? 'bg-white opacity-50'
     : 'bg-white';
@@ -81,9 +81,9 @@ export default function PersonCell({
 
     // Color scheme: Done=grey, Now=green, Coming Soon=blue
     const cardStyles = {
-      completed: 'bg-gray-100 border border-gray-300',
-      active: 'bg-green-50 border border-green-400',
-      pending: 'bg-blue-50 border border-blue-300',
+      completed: 'bg-white/80 shadow-sm',
+      active: 'bg-white shadow-md ring-2 ring-green-400/50',
+      pending: 'bg-white/60 shadow-sm',
     };
 
     const statusIcon = {
@@ -103,25 +103,25 @@ export default function PersonCell({
     return (
       <div
         key={step.id}
-        className={`rounded p-3 relative overflow-hidden min-h-[130px] flex flex-col ${cardStyles[status]} ${status !== 'pending' ? 'cursor-pointer' : ''}`}
+        className={`rounded-lg p-3 relative overflow-hidden min-h-[120px] flex flex-col transition-all duration-200 ${cardStyles[status]} ${status !== 'pending' ? 'cursor-pointer hover:shadow-md' : ''}`}
         onClick={status !== 'pending' ? () => onStepClick(step.id, taskId) : undefined}
       >
         {/* Status tag - bottom right corner */}
         {status === 'completed' && (
-          <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-gray-200 text-gray-600 text-[9px] font-semibold px-1.5 py-0.5 rounded">
-            <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+          <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-gray-100 text-gray-500 text-[8px] font-medium px-1.5 py-0.5 rounded-full uppercase tracking-wide">
+            <svg className="w-2 h-2" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
             </svg>
-            DONE
+            Done
           </div>
         )}
 
         {status === 'pending' && (
-          <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-blue-100 text-blue-600 text-[9px] font-semibold px-1.5 py-0.5 rounded">
-            <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+          <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-blue-50 text-blue-500 text-[8px] font-medium px-1.5 py-0.5 rounded-full uppercase tracking-wide">
+            <svg className="w-2 h-2" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
             </svg>
-            NEXT
+            Next
           </div>
         )}
 
@@ -216,7 +216,7 @@ export default function PersonCell({
   };
 
   return (
-    <div className={`min-h-[100px] p-2 border-l border-gray-100 ${cellClass} ${isCurrentUser ? 'ring-2 ring-teal-300 ring-inset' : ''}`}>
+    <div className={`min-h-[100px] p-2 ${cellClass} ${isCurrentUser ? 'ring-2 ring-teal-400/30 ring-inset rounded-lg' : ''}`}>
       <div className="space-y-2">
         {/* Completed steps */}
         {completedSteps.map((step) => renderStepCard(step, 'completed'))}
