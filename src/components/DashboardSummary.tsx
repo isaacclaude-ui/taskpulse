@@ -137,8 +137,8 @@ export default function DashboardSummary({ tasks, members }: DashboardSummaryPro
                 </div>
               </div>
 
-              {/* Segmented progress bar with direction arrow */}
-              <div className="flex items-center gap-0.5 mb-2">
+              {/* Segmented progress bar */}
+              <div className="flex items-center gap-1 mb-2">
                 {Array.from({ length: pipeline.total }).map((_, i) => {
                   const isCompleted = i < pipeline.completed;
                   const isCurrent = i === pipeline.completed;
@@ -146,9 +146,7 @@ export default function DashboardSummary({ tasks, members }: DashboardSummaryPro
                   return (
                     <div key={i} className="flex-1 flex items-center">
                       <div
-                        className={`h-1.5 flex-1 transition-all ${
-                          isLast ? 'rounded-full' : 'rounded-l-full'
-                        } ${
+                        className={`h-2 flex-1 ${isLast ? 'rounded-l-full' : 'rounded-full'} transition-all ${
                           isCompleted
                             ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
                             : isCurrent
@@ -156,25 +154,21 @@ export default function DashboardSummary({ tasks, members }: DashboardSummaryPro
                             : 'bg-slate-200'
                         }`}
                       />
-                      {/* Arrow connector between segments (except last) */}
-                      {!isLast && (
-                        <div className={`w-0 h-0 border-t-[3px] border-b-[3px] border-l-[5px] border-t-transparent border-b-transparent ${
-                          isCompleted
-                            ? 'border-l-emerald-500'
-                            : isCurrent
-                            ? 'border-l-green-500'
-                            : 'border-l-slate-200'
-                        }`} />
+                      {/* Arrow tip on last segment */}
+                      {isLast && (
+                        <div
+                          className={`w-0 h-0 border-t-[5px] border-b-[5px] border-l-[6px] border-t-transparent border-b-transparent ${
+                            isCompleted
+                              ? 'border-l-emerald-500'
+                              : isCurrent
+                              ? 'border-l-green-500'
+                              : 'border-l-slate-200'
+                          }`}
+                        />
                       )}
                     </div>
                   );
                 })}
-                {/* Final arrow indicator */}
-                <div className="ml-1 text-slate-300">
-                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                </div>
               </div>
 
               {/* Current step info */}

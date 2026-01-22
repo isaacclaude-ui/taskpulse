@@ -8,6 +8,7 @@ import PipelineGrid from '@/components/PipelineGrid';
 import StepDetailModal from '@/components/StepDetailModal';
 import TaskEditModal from '@/components/TaskEditModal';
 import DashboardSummary from '@/components/DashboardSummary';
+import IntroModal from '@/components/IntroModal';
 import Footer from '@/components/Footer';
 import type { TaskWithSteps, Member, Team, Announcement, SharedLink, CalendarEvent, CalendarItem } from '@/types';
 
@@ -55,6 +56,18 @@ export default function DashboardPage() {
   // Pending users count (for admin badge)
   const [pendingCount, setPendingCount] = useState(0);
 
+  // Intro modal state
+  const [showIntro, setShowIntro] = useState(false);
+
+  // Check if first-time user (show intro on first visit)
+  useEffect(() => {
+    const hasSeenIntro = localStorage.getItem('taskpulse-intro-seen');
+    if (!hasSeenIntro) {
+      setShowIntro(true);
+      localStorage.setItem('taskpulse-intro-seen', 'true');
+    }
+  }, []);
+
   useEffect(() => {
     async function checkAuth() {
       const user = await getCurrentUser();
@@ -76,14 +89,27 @@ export default function DashboardPage() {
     checkAuth();
   }, [router, teamId, member]);
 
-  // Load pending users count for admin badge
+  // Load pending users count for admin/lead badge
   const loadPendingCount = async () => {
-    if (!member || member.role !== 'admin' || !business) return;
+    if (!member || !business) return;
+    if (member.role !== 'admin' && member.role !== 'lead') return;
     try {
-      const res = await fetch(`/api/admin/pending-users?businessId=${business.id}`);
+      // Admin sees all pending, Lead sees only their team's pending
+      const url = member.role === 'lead' && teamId
+        ? `/api/admin/pending-users?businessId=${business.id}&teamId=${teamId}`
+        : `/api/admin/pending-users?businessId=${business.id}`;
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
-        setPendingCount(data.pendingUsers?.length || 0);
+        // For leads, filter to only their team
+        if (member.role === 'lead' && teamId) {
+          const teamPending = (data.pendingUsers || []).filter(
+            (p: { requested_team_id?: string }) => p.requested_team_id === teamId
+          );
+          setPendingCount(teamPending.length);
+        } else {
+          setPendingCount(data.pendingUsers?.length || 0);
+        }
       }
     } catch (error) {
       console.error('Failed to load pending count:', error);
@@ -410,6 +436,17 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-shrink-0">
+              {/* Info button */}
+              <button
+                onClick={() => setShowIntro(true)}
+                className="flex items-center justify-center text-white/60 p-2 rounded-lg hover:bg-white/10 hover:text-white transition-colors"
+                title="How it works"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+
               {/* User email */}
               {member && (
                 <span className="text-sm text-white/60 hidden sm:block">{member.email}</span>
@@ -427,8 +464,8 @@ export default function DashboardPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                   <span className="hidden lg:inline ml-2">{member?.role === 'lead' ? 'Team Admin' : 'Admin'}</span>
-                  {/* Pending users badge - admin only */}
-                  {member?.role === 'admin' && pendingCount > 0 && (
+                  {/* Pending users badge - admin and lead */}
+                  {pendingCount > 0 && (
                     <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-amber-500 text-white text-[10px] font-bold rounded-full px-1 animate-pulse">
                       {pendingCount}
                     </span>
@@ -894,6 +931,9 @@ export default function DashboardPage() {
 
       {/* Footer */}
       <Footer />
+
+      {/* Intro Modal */}
+      <IntroModal isOpen={showIntro} onClose={() => setShowIntro(false)} />
     </div>
   );
 }

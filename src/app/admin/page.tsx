@@ -44,7 +44,7 @@ interface MemberWithTeams extends Member {
 
 export default function AdminPage() {
   const router = useRouter();
-  const { business, member } = useNav();
+  const { business, member, team, teamId } = useNav();
 
   const [activeTab, setActiveTab] = useState<Tab>('settings');
   const [teams, setTeams] = useState<Team[]>([]);
@@ -188,22 +188,39 @@ export default function AdminPage() {
         setPendingUsers(pendingData.pendingUsers || []);
         setEmailMembers(emailData.members || []);
       } else if (isLead && team) {
-        // Lead: only fetch their team's data
-        const [teamsRes, emailRes] = await Promise.all([
+        // Lead: fetch their team's data (members, pending, content)
+        const [teamsRes, membersRes, pendingRes, emailRes] = await Promise.all([
           fetch(`/api/teams?businessId=${business.id}`),
+          fetch(`/api/members?teamId=${team.id}&includeTeams=true`),
+          fetch(`/api/admin/pending-users?businessId=${business.id}&teamId=${team.id}`),
           fetch(`/api/admin/email-settings?businessId=${business.id}&teamId=${team.id}`),
         ]);
 
-        const [teamsData, emailData] = await Promise.all([
+        const [teamsData, membersData, pendingData, emailData] = await Promise.all([
           teamsRes.json(),
+          membersRes.json(),
+          pendingRes.json(),
           emailRes.json(),
         ]);
 
         // Filter to only show lead's team
         const leadTeams = (teamsData.teams || []).filter((t: Team) => t.id === team.id);
         setTeams(leadTeams);
-        setMembers([]); // Leads don't manage members
-        setPendingUsers([]); // Leads don't see pending users
+        // Filter members to only those in lead's team
+        const teamMembers = (membersData.members || [])
+          .filter((m: Member & { teams?: { id: string }[] }) =>
+            m.teams?.some((t) => t.id === team.id)
+          )
+          .map((m: Member & { teams?: { id: string }[] }) => ({
+            ...m,
+            teamIds: m.teams?.map((t) => t.id) || [],
+          }));
+        setMembers(teamMembers);
+        // Filter pending to only those requesting lead's team
+        const teamPending = (pendingData.pendingUsers || []).filter(
+          (p: PendingUser) => p.requested_team_id === team.id
+        );
+        setPendingUsers(teamPending);
         setEmailMembers(emailData.members || []);
       }
 
@@ -884,39 +901,40 @@ export default function AdminPage() {
                 </svg>
                 Teams
               </button>
-              <button
-                onClick={() => setActiveTab('members')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-                  activeTab === 'members'
-                    ? 'bg-teal-600 text-white'
-                    : 'bg-white text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                Members
-              </button>
-              <button
-                onClick={() => setActiveTab('pending')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-                  activeTab === 'pending'
-                    ? 'bg-teal-600 text-white'
-                    : 'bg-white text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                </svg>
-                Pending
-                {pendingUsers.length > 0 && (
-                  <span className="bg-amber-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                    {pendingUsers.length}
-                  </span>
-                )}
-              </button>
             </>
           )}
+          {/* Members + Pending tabs - Admin + Lead */}
+          <button
+            onClick={() => setActiveTab('members')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+              activeTab === 'members'
+                ? 'bg-teal-600 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            {isLead ? 'Team Members' : 'Members'}
+          </button>
+          <button
+            onClick={() => setActiveTab('pending')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+              activeTab === 'pending'
+                ? 'bg-teal-600 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+            </svg>
+            Pending
+            {pendingUsers.length > 0 && (
+              <span className="bg-amber-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                {pendingUsers.length}
+              </span>
+            )}
+          </button>
           {/* Shared tabs - Notifications and Content */}
           <button
             onClick={() => setActiveTab('notifications')}

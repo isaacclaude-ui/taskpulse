@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const dayOfWeek = now.getUTCDay(); // 0 = Sunday, 1 = Monday
     const dayOfMonth = now.getUTCDate();
 
-    // Get all admins and leads with email settings
+    // Get all members with email settings (all roles receive summaries)
     const { data: members, error } = await supabase
       .from('members')
       .select(`
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
         )
       `)
       .not('email', 'is', null)
-      .in('role', ['admin', 'lead']);
+      .in('role', ['admin', 'lead', 'staff']);
 
     if (error) throw error;
 

@@ -173,6 +173,7 @@ export interface PendingUser {
   id: string;
   email: string;
   business_id?: string;
+  requested_team_id?: string;
   status: 'pending' | 'approved' | 'rejected';
   created_at: string;
 }
