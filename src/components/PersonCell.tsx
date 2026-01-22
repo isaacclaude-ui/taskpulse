@@ -106,16 +106,21 @@ export default function PersonCell({
         className={`rounded p-3 relative overflow-hidden min-h-[130px] flex flex-col ${cardStyles[status]} ${status !== 'pending' ? 'cursor-pointer' : ''}`}
         onClick={status !== 'pending' ? () => onStepClick(step.id, taskId) : undefined}
       >
-        {/* DONE watermark for completed steps */}
+        {/* Status tag - bottom right corner */}
         {status === 'completed' && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-500 text-2xl font-bold tracking-widest rotate-[-15deg] pointer-events-none select-none">
+          <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-gray-200 text-gray-600 text-[9px] font-semibold px-1.5 py-0.5 rounded">
+            <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
             DONE
           </div>
         )}
 
-        {/* NEXT watermark for pending steps */}
         {status === 'pending' && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-blue-400 text-2xl font-bold tracking-widest rotate-[-15deg] pointer-events-none select-none">
+          <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-blue-100 text-blue-600 text-[9px] font-semibold px-1.5 py-0.5 rounded">
+            <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+            </svg>
             NEXT
           </div>
         )}
