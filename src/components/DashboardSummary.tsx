@@ -147,7 +147,7 @@ export default function DashboardSummary({ tasks, members }: DashboardSummaryPro
                       key={i}
                       className={`h-1.5 flex-1 rounded-full transition-all ${
                         isCompleted
-                          ? 'bg-gradient-to-r from-gray-300 to-gray-400'
+                          ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
                           : isCurrent
                           ? 'bg-gradient-to-r from-green-400 to-green-500 animate-pulse'
                           : 'bg-slate-200'
