@@ -47,9 +47,9 @@ export async function POST(
       .eq('id', memberId)
       .single();
 
-    const isAdmin = member?.role === 'admin';
+    const isAdminOrLead = member?.role === 'admin' || member?.role === 'lead';
 
-    if (!isAuthorized && !isAdmin) {
+    if (!isAuthorized && !isAdminOrLead) {
       return NextResponse.json({ error: 'You are not authorized to claim this step' }, { status: 403 });
     }
 

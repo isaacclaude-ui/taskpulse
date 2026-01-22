@@ -73,7 +73,7 @@ export async function POST(
       .eq('id', memberId)
       .single();
 
-    const isAdmin = member?.role === 'admin';
+    const isAdminOrLead = member?.role === 'admin' || member?.role === 'lead';
     const completerName = member?.name || 'Someone';
 
     // For joint tasks, check if member is in additional_assignees
@@ -81,8 +81,8 @@ export async function POST(
       currentStep.additional_assignees &&
       currentStep.additional_assignees.includes(memberId);
 
-    // Verify member is assigned (if step has assignment) - admins and joint assignees can complete
-    if (currentStep.assigned_to && currentStep.assigned_to !== memberId && !isAdmin && !isJointAssignee) {
+    // Verify member is assigned (if step has assignment) - admins, leads, and joint assignees can complete
+    if (currentStep.assigned_to && currentStep.assigned_to !== memberId && !isAdminOrLead && !isJointAssignee) {
       return NextResponse.json(
         { error: 'Only the assigned member can complete this step' },
         { status: 403 }

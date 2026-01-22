@@ -140,50 +140,88 @@ export default function AdminPage() {
         router.push('/login');
         return;
       }
-      if (!member || member.role !== 'admin') {
+      // Admin and Lead can access admin panel
+      if (!member || (member.role !== 'admin' && member.role !== 'lead')) {
         router.push('/dashboard');
         return;
+      }
+      // Set default tab based on role - leads only see content/notifications
+      if (member.role === 'lead') {
+        setActiveTab('content');
       }
       loadData();
     }
     checkAuth();
   }, [router, member]);
 
+  const isAdmin = member?.role === 'admin';
+  const isLead = member?.role === 'lead';
+
   const loadData = async () => {
     if (!business) return;
 
     setLoading(true);
     try {
-      const [teamsRes, membersRes, pendingRes, emailRes] = await Promise.all([
-        fetch(`/api/teams?businessId=${business.id}`),
-        fetch(`/api/members?businessId=${business.id}&includeTeams=true`),
-        fetch(`/api/admin/pending-users?businessId=${business.id}`),
-        fetch(`/api/admin/email-settings?businessId=${business.id}`),
-      ]);
+      // Leads only see their team data, Admins see all
+      if (isAdmin) {
+        const [teamsRes, membersRes, pendingRes, emailRes] = await Promise.all([
+          fetch(`/api/teams?businessId=${business.id}`),
+          fetch(`/api/members?businessId=${business.id}&includeTeams=true`),
+          fetch(`/api/admin/pending-users?businessId=${business.id}`),
+          fetch(`/api/admin/email-settings?businessId=${business.id}`),
+        ]);
 
-      const [teamsData, membersData, pendingData, emailData] = await Promise.all([
-        teamsRes.json(),
-        membersRes.json(),
-        pendingRes.json(),
-        emailRes.json(),
-      ]);
+        const [teamsData, membersData, pendingData, emailData] = await Promise.all([
+          teamsRes.json(),
+          membersRes.json(),
+          pendingRes.json(),
+          emailRes.json(),
+        ]);
 
-      setTeams(teamsData.teams || []);
-      setMembers(membersData.members || []);
-      setPendingUsers(pendingData.pendingUsers || []);
-      setEmailMembers(emailData.members || []);
-      setBusinessName(business?.name || '');
+        setTeams(teamsData.teams || []);
+        setMembers(
+          (membersData.members || []).map((m: Member & { teams?: { id: string }[] }) => ({
+            ...m,
+            teamIds: m.teams?.map((t) => t.id) || [],
+          }))
+        );
+        setPendingUsers(pendingData.pendingUsers || []);
+        setEmailMembers(emailData.members || []);
+      } else if (isLead && team) {
+        // Lead: only fetch their team's data
+        const [teamsRes, emailRes] = await Promise.all([
+          fetch(`/api/teams?businessId=${business.id}`),
+          fetch(`/api/admin/email-settings?businessId=${business.id}&teamId=${team.id}`),
+        ]);
 
-      // Fetch join code from business
-      const bizRes = await fetch(`/api/businesses?id=${business.id}`);
-      const bizData = await bizRes.json();
-      if (bizData.business?.join_code) {
-        setJoinCode(bizData.business.join_code);
+        const [teamsData, emailData] = await Promise.all([
+          teamsRes.json(),
+          emailRes.json(),
+        ]);
+
+        // Filter to only show lead's team
+        const leadTeams = (teamsData.teams || []).filter((t: Team) => t.id === team.id);
+        setTeams(leadTeams);
+        setMembers([]); // Leads don't manage members
+        setPendingUsers([]); // Leads don't see pending users
+        setEmailMembers(emailData.members || []);
       }
+
+      // For admin, also load business settings
+      if (isAdmin) {
+        setBusinessName(business?.name || '');
+        const bizRes = await fetch(`/api/businesses?id=${business.id}`);
+        const bizData = await bizRes.json();
+        if (bizData.business?.join_code) {
+          setJoinCode(bizData.business.join_code);
+        }
+      }
+
+      setLoading(false);
     } catch (error) {
       console.error('Failed to load data:', error);
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleAddMember = async () => {
@@ -814,66 +852,72 @@ export default function AdminPage() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-6">
-        {/* Tabs - Order: Settings, Teams, Members, Pending, Notifications, Content */}
+        {/* Tabs - Admin sees all, Lead sees only Notifications + Content */}
         <div className="flex flex-wrap gap-2 mb-6">
-          <button
-            onClick={() => setActiveTab('settings')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-              activeTab === 'settings'
-                ? 'bg-teal-600 text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            Settings
-          </button>
-          <button
-            onClick={() => setActiveTab('teams')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-              activeTab === 'teams'
-                ? 'bg-teal-600 text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-            Teams
-          </button>
-          <button
-            onClick={() => setActiveTab('members')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-              activeTab === 'members'
-                ? 'bg-teal-600 text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-            Members
-          </button>
-          <button
-            onClick={() => setActiveTab('pending')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-              activeTab === 'pending'
-                ? 'bg-teal-600 text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-            </svg>
-            Pending
-            {pendingUsers.length > 0 && (
-              <span className="bg-amber-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                {pendingUsers.length}
-              </span>
-            )}
-          </button>
+          {/* Admin-only tabs */}
+          {isAdmin && (
+            <>
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                  activeTab === 'settings'
+                    ? 'bg-teal-600 text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Settings
+              </button>
+              <button
+                onClick={() => setActiveTab('teams')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                  activeTab === 'teams'
+                    ? 'bg-teal-600 text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                Teams
+              </button>
+              <button
+                onClick={() => setActiveTab('members')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                  activeTab === 'members'
+                    ? 'bg-teal-600 text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                Members
+              </button>
+              <button
+                onClick={() => setActiveTab('pending')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                  activeTab === 'pending'
+                    ? 'bg-teal-600 text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                </svg>
+                Pending
+                {pendingUsers.length > 0 && (
+                  <span className="bg-amber-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                    {pendingUsers.length}
+                  </span>
+                )}
+              </button>
+            </>
+          )}
+          {/* Shared tabs - Notifications and Content */}
           <button
             onClick={() => setActiveTab('notifications')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
