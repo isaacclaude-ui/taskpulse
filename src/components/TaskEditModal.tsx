@@ -16,6 +16,11 @@ interface ConfirmedAssignment {
   isConfirmed: boolean;
   extractedName: string | null;
   isLocked: boolean; // NEW: Completed steps are locked
+  // Joint task support
+  isJoint: boolean;
+  additionalMemberIds: (string | null)[];
+  additionalMemberNames: string[];
+  additionalExtractedNames: string[];
 }
 
 interface TaskEditModalProps {
@@ -142,6 +147,11 @@ export default function TaskEditModal({
         isConfirmed: !!step.assigned_to,
         extractedName: step.assigned_to_name || null,
         isLocked: step.status === 'completed', // Lock completed steps
+        // Joint task fields
+        isJoint: step.is_joint || false,
+        additionalMemberIds: step.additional_assignees || [],
+        additionalMemberNames: step.additional_assignee_names || [],
+        additionalExtractedNames: step.additional_assignee_names || [],
       }));
       setConfirmedAssignments(initialAssignments);
 
@@ -197,6 +207,26 @@ export default function TaskEditModal({
         filtered.push({ step_index: stepIndex, member_id: memberId, member_name: memberName });
       }
       return filtered;
+    });
+  };
+
+  // Handle user changing an additional assignee (for joint tasks)
+  const handleAdditionalAssignmentChange = (stepIndex: number, additionalIndex: number, memberId: string | null, memberName: string) => {
+    setConfirmedAssignments(prev => {
+      const updated = [...prev];
+      const existing = updated.findIndex(a => a.stepIndex === stepIndex);
+      if (existing >= 0 && !updated[existing].isLocked) {
+        const newAdditionalMemberIds = [...updated[existing].additionalMemberIds];
+        const newAdditionalMemberNames = [...updated[existing].additionalMemberNames];
+        newAdditionalMemberIds[additionalIndex] = memberId;
+        newAdditionalMemberNames[additionalIndex] = memberName;
+        updated[existing] = {
+          ...updated[existing],
+          additionalMemberIds: newAdditionalMemberIds,
+          additionalMemberNames: newAdditionalMemberNames,
+        };
+      }
+      return updated;
     });
   };
 
@@ -266,10 +296,15 @@ export default function TaskEditModal({
     setError('');
 
     try {
-      // Build member assignments
+      // Build member assignments with joint task support
       const memberAssignments = extractedData.pipeline_steps.map((_, index) => {
         const match = matchedMembers.find(m => m.step_index === index);
-        return match?.member_id || null;
+        const confirmed = confirmedAssignments.find(a => a.stepIndex === index);
+        return {
+          memberId: match?.member_id || confirmed?.memberId || null,
+          isJoint: confirmed?.isJoint || false,
+          additionalMemberIds: confirmed?.additionalMemberIds || [],
+        };
       });
 
       // Include recurrence in extracted data
@@ -552,6 +587,64 @@ export default function TaskEditModal({
                                   ))}
                                 </optgroup>
                               </select>
+
+                              {/* Additional assignees for joint tasks */}
+                              {confirmed?.isJoint && confirmed.additionalExtractedNames.length > 0 && (
+                                <div className="mt-2 pt-2 border-t border-teal-200/50">
+                                  <div className="flex items-center gap-1 mb-1">
+                                    <span className="text-[10px] text-purple-600 font-medium">Joint task — also assigned:</span>
+                                  </div>
+                                  {confirmed.additionalExtractedNames.map((addName, addIdx) => {
+                                    const addMemberId = confirmed.additionalMemberIds[addIdx];
+                                    const hasAddMatch = addMemberId !== null;
+                                    return (
+                                      <div key={addIdx} className="mt-1">
+                                        <div className="flex items-center gap-1 mb-1">
+                                          <span className="text-[10px] text-gray-500">AI found:</span>
+                                          <span className={`text-[10px] font-medium ${hasAddMatch ? 'text-teal-600' : 'text-amber-600'}`}>
+                                            &quot;{addName}&quot;
+                                          </span>
+                                          {!hasAddMatch && !isLocked && (
+                                            <span className="text-[10px] text-amber-500">(new)</span>
+                                          )}
+                                        </div>
+                                        <select
+                                          value={addMemberId || '__new__'}
+                                          onChange={(e) => {
+                                            const val = e.target.value;
+                                            if (val === '__new__') {
+                                              handleAdditionalAssignmentChange(i, addIdx, null, addName);
+                                            } else {
+                                              const selectedMember = teamMembers.find(m => m.id === val);
+                                              handleAdditionalAssignmentChange(i, addIdx, val, selectedMember?.name || '');
+                                            }
+                                          }}
+                                          disabled={isLocked}
+                                          className={`w-full text-xs p-1.5 rounded border ${
+                                            isLocked
+                                              ? 'border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed'
+                                              : hasAddMatch
+                                              ? 'border-teal-300 bg-white text-teal-800'
+                                              : 'border-amber-300 bg-white text-amber-800'
+                                          } focus:outline-none focus:ring-1 focus:ring-teal-500`}
+                                        >
+                                          <option value="__new__">
+                                            {isLocked ? addName : `➕ Create "${addName}" as new member`}
+                                          </option>
+                                          <optgroup label="Team members">
+                                            {teamMembers.filter(m => !m.is_archived).map(m => (
+                                              <option key={m.id} value={m.id}>
+                                                {m.name} {m.name.toLowerCase().includes(addName.toLowerCase()) ? '✓' : ''}
+                                              </option>
+                                            ))}
+                                          </optgroup>
+                                        </select>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
                               {isLocked && (
                                 <p className="text-[10px] text-gray-400 mt-0.5">
                                   Locked (step completed)
