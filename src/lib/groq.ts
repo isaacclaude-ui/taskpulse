@@ -241,10 +241,11 @@ export async function processTaskChat(
     let isJoint = s.is_joint || false;
     let alternatives = s.who_alternatives || [];
 
-    // FUNDAMENTAL FIX: Parse "X or Y" / "X and Y" / "X/Y" patterns from extractedName
-    // This handles cases where AI puts combined names in the who field
-    if (extractedName && alternatives.length === 0) {
-      // Check for "X or Y", "X and Y", "X/Y", "both X and Y" patterns
+    // ALWAYS parse "X or Y" / "X and Y" / "X/Y" patterns from extractedName
+    // This runs regardless of whether alternatives already exist, because AI might return:
+    //   who: "Isaac or Lucy" (combined) + who_alternatives: ["Isaac", "Lucy"]
+    // We need to extract the true primary name ("Isaac") before filtering
+    if (extractedName) {
       const orMatch = extractedName.match(/^(.+?)\s+or\s+(.+)$/i);
       const andMatch = extractedName.match(/^(?:both\s+)?(.+?)\s+and\s+(.+)$/i);
       const slashMatch = extractedName.match(/^(.+?)\/(.+)$/);
@@ -253,13 +254,18 @@ export async function processTaskChat(
       if (match) {
         const name1 = match[1].trim();
         const name2 = match[2].trim();
-        extractedName = name1; // Primary assignee is first name
-        alternatives = [name2]; // Only the additional name (not the primary)
+        extractedName = name1; // Primary assignee is first name (now properly extracted)
+
+        // Only populate alternatives if empty (AI didn't provide them)
+        if (alternatives.length === 0) {
+          alternatives = [name2];
+        }
         isJoint = true;
       }
     }
 
-    // Also filter out the primary name if AI included it in alternatives
+    // Filter out the primary name from alternatives
+    // Now extractedName is the TRUE primary (e.g., "Isaac" not "Isaac or Lucy")
     if (extractedName && alternatives.length > 0) {
       const primaryLower = extractedName.toLowerCase();
       alternatives = alternatives.filter(alt => alt.toLowerCase() !== primaryLower);
