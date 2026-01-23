@@ -100,7 +100,7 @@ export default function TaskRow({
     <tr className="hover:bg-teal-50/30 transition-colors group/row">
       {/* Task info cell - frozen first column */}
       <td
-        className="sticky left-0 z-10 bg-gradient-to-r from-white to-gray-50/50 border-r border-gray-200/80 p-3 shadow-[2px_0_8px_-4px_rgba(0,0,0,0.08)]"
+        className="sticky left-0 z-10 bg-gradient-to-r from-white via-white to-slate-50/80 border-r border-gray-200/80 p-3 shadow-[2px_0_8px_-4px_rgba(0,0,0,0.08)] border-l-[3px] border-l-teal-500"
         style={{ width: `${TASK_COL_WIDTH}px`, minWidth: `${TASK_COL_WIDTH}px`, maxWidth: `${TASK_COL_WIDTH}px` }}
       >
         <div className="flex items-start gap-2">
