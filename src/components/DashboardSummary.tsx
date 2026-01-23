@@ -201,27 +201,27 @@ export default function DashboardSummary({ tasks, members }: DashboardSummaryPro
             return (
               <div
                 key={stat.id}
-                className={`rounded-md p-2 min-w-[100px] flex-shrink-0 transition-all ${
+                className={`rounded-lg p-2.5 min-w-[110px] flex-shrink-0 transition-all shadow-sm hover:shadow-md ${
                   isUrgent
-                    ? 'bg-green-100 border-2 border-green-400'
-                    : 'bg-white border border-slate-200'
+                    ? 'bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 border border-green-300'
+                    : 'bg-gradient-to-br from-slate-50 via-white to-slate-50 border border-slate-200'
                 }`}
               >
-                <div className="font-medium text-slate-800 text-xs truncate mb-1" title={stat.name}>
+                <div className={`font-semibold text-xs truncate mb-1.5 ${isUrgent ? 'text-green-800' : 'text-slate-700'}`} title={stat.name}>
                   {getFirstName(stat.name)}
                 </div>
-                <div className="flex flex-col gap-0 text-[10px]">
+                <div className="flex flex-col gap-0.5 text-[10px]">
                   <div className="flex items-center justify-between">
                     <span className="text-slate-500">Now</span>
-                    <span className={`font-semibold ${isUrgent ? 'text-green-600' : 'text-slate-400'}`}>{stat.now}</span>
+                    <span className={`font-bold ${isUrgent ? 'text-green-600' : 'text-slate-400'}`}>{stat.now}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-slate-500">Next</span>
-                    <span className="font-semibold text-blue-600">{stat.comingSoon}</span>
+                    <span className="font-bold text-blue-500">{stat.comingSoon}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-slate-500">Done</span>
-                    <span className="font-semibold text-emerald-600">{stat.done}</span>
+                    <span className="font-bold text-slate-600">{stat.done}</span>
                   </div>
                 </div>
               </div>
