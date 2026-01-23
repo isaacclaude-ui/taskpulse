@@ -301,7 +301,7 @@ export default function StepDetailModal({
                 {prevStep && (
                   <button
                     onClick={() => setShowReturnDialog(true)}
-                    className="w-full py-2.5 px-4 bg-gradient-to-r from-slate-300 via-slate-400 to-slate-500 text-white rounded-lg hover:from-slate-400 hover:to-slate-600 transition-all shadow-sm flex items-center justify-center gap-2 text-sm font-medium"
+                    className="w-full py-2.5 px-4 bg-gradient-to-r from-slate-500 via-slate-300 to-slate-500 text-white rounded-lg hover:from-slate-600 hover:via-slate-400 hover:to-slate-600 transition-all shadow-sm flex items-center justify-center gap-2 text-sm font-medium"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 15l-3-3m0 0l3-3m-3 3h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z" />
