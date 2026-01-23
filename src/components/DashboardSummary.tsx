@@ -137,40 +137,19 @@ export default function DashboardSummary({ tasks, members }: DashboardSummaryPro
                 </div>
               </div>
 
-              {/* Segmented progress bar with arrow */}
-              <div className="flex items-center gap-1 mb-2">
-                {Array.from({ length: pipeline.total }).map((_, i) => {
-                  const isCompleted = i < pipeline.completed;
-                  const isCurrent = i === pipeline.completed;
-                  const isLast = i === pipeline.total - 1;
-                  return (
-                    <div key={i} className="flex-1 flex items-center">
-                      <div
-                        className={`h-2.5 flex-1 ${isLast ? 'rounded-l-full' : 'rounded-full'} transition-all ${
-                          isCompleted
-                            ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
-                            : isCurrent
-                            ? 'bg-gradient-to-r from-green-400 to-green-500 animate-pulse'
-                            : 'bg-slate-200'
-                        }`}
-                      />
-                      {/* Arrow tip on last segment - circled arrow */}
-                      {isLast && (
-                        <div className={`w-5 h-5 -ml-0.5 flex-shrink-0 rounded-full flex items-center justify-center ${
-                          isCompleted
-                            ? 'bg-emerald-500'
-                            : isCurrent
-                            ? 'bg-green-500'
-                            : 'bg-slate-300'
-                        }`}>
-                          <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M8 5L19 12L8 19V5Z"/>
-                          </svg>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+              {/* Progress bar - pill style with rounded ends */}
+              <div className="relative h-4 mb-2">
+                {/* Track - rounded pill with inset shadow */}
+                <div className="absolute inset-0 bg-slate-200 rounded-full shadow-inner" />
+                {/* Progress fill - rounded pill */}
+                <div
+                  className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${
+                    pipeline.completed === pipeline.total
+                      ? 'bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-500'
+                      : 'bg-gradient-to-r from-emerald-400 via-green-500 to-teal-500'
+                  }`}
+                  style={{ width: `${Math.max((pipeline.completed / pipeline.total) * 100, 8)}%` }}
+                />
               </div>
 
               {/* Current step info */}
