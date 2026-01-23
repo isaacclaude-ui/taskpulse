@@ -237,9 +237,27 @@ export async function processTaskChat(
   const unmatchedNames: string[] = [];
 
   const normalizedSteps = rawSteps.map((s: { what?: string; name?: string; who?: string; assigned_to_name?: string; who_alternatives?: string[]; is_joint?: boolean; by_when?: string; mini_deadline?: string; status?: string }, index: number) => {
-    const extractedName = s.who || s.assigned_to_name || null;
-    const isJoint = s.is_joint || false;
-    const alternatives = s.who_alternatives || [];
+    let extractedName = s.who || s.assigned_to_name || null;
+    let isJoint = s.is_joint || false;
+    let alternatives = s.who_alternatives || [];
+
+    // FUNDAMENTAL FIX: Parse "X or Y" / "X and Y" / "X/Y" patterns from extractedName
+    // This handles cases where AI puts combined names in the who field
+    if (extractedName && alternatives.length === 0) {
+      // Check for "X or Y", "X and Y", "X/Y", "both X and Y" patterns
+      const orMatch = extractedName.match(/^(.+?)\s+or\s+(.+)$/i);
+      const andMatch = extractedName.match(/^(?:both\s+)?(.+?)\s+and\s+(.+)$/i);
+      const slashMatch = extractedName.match(/^(.+?)\/(.+)$/);
+
+      const match = orMatch || andMatch || slashMatch;
+      if (match) {
+        const name1 = match[1].trim();
+        const name2 = match[2].trim();
+        extractedName = name1; // Primary assignee is first name
+        alternatives = [name1, name2]; // Both names in alternatives
+        isJoint = true;
+      }
+    }
 
     // WE do the matching, not the AI
     if (extractedName) {
