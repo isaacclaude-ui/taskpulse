@@ -112,7 +112,7 @@ export default function PipelineGrid({
               {displayMembers.map((member) => (
                 <th
                   key={member.id}
-                  className="sticky top-0 z-20 bg-gradient-to-b from-slate-100 via-slate-50 to-white border-b border-l border-gray-200 p-3 font-semibold text-slate-700 text-sm text-center"
+                  className="sticky top-0 z-20 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 border-b border-l border-slate-300 p-3 font-semibold text-slate-700 text-sm text-center"
                   style={{ width: `${MEMBER_COL_WIDTH}px`, minWidth: `${MEMBER_COL_WIDTH}px`, maxWidth: `${MEMBER_COL_WIDTH}px` }}
                 >
                   <div className="truncate" title={member.name}>{member.name}</div>
