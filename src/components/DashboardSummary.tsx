@@ -137,19 +137,28 @@ export default function DashboardSummary({ tasks, members }: DashboardSummaryPro
                 </div>
               </div>
 
-              {/* Progress bar - pill style with rounded ends */}
-              <div className="relative h-4 mb-2">
+              {/* Progress bar - pill style with arrows and text */}
+              <div className="relative h-6 mb-2">
                 {/* Track - rounded pill with inset shadow */}
                 <div className="absolute inset-0 bg-slate-200 rounded-full shadow-inner" />
-                {/* Progress fill - rounded pill */}
+                {/* Progress fill - rounded pill with arrows pattern */}
                 <div
-                  className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${
+                  className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 overflow-hidden flex items-center ${
                     pipeline.completed === pipeline.total
                       ? 'bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-500'
                       : 'bg-gradient-to-r from-emerald-400 via-green-500 to-teal-500'
                   }`}
-                  style={{ width: `${Math.max((pipeline.completed / pipeline.total) * 100, 8)}%` }}
-                />
+                  style={{ width: `${Math.max((pipeline.completed / pipeline.total) * 100, 25)}%` }}
+                >
+                  {/* Arrows pattern overlay */}
+                  <div className="absolute inset-0 flex items-center justify-end pr-1 opacity-30">
+                    <span className="text-white text-xs font-bold tracking-tight">› › › › › › › › › ›</span>
+                  </div>
+                  {/* Progress text */}
+                  <span className="relative z-10 text-white text-[10px] font-bold uppercase tracking-wider pl-3 whitespace-nowrap">
+                    Progress
+                  </span>
+                </div>
               </div>
 
               {/* Current step info */}
