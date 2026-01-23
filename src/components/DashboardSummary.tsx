@@ -154,22 +154,19 @@ export default function DashboardSummary({ tasks, members }: DashboardSummaryPro
                             : 'bg-slate-200'
                         }`}
                       />
-                      {/* Arrow tip on last segment - triple chevron SVG */}
+                      {/* Arrow tip on last segment - circled arrow */}
                       {isLast && (
-                        <svg
-                          className={`w-6 h-6 -ml-1 flex-shrink-0 ${
-                            isCompleted
-                              ? 'text-emerald-500'
-                              : isCurrent
-                              ? 'text-green-500'
-                              : 'text-slate-300'
-                          }`}
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                        >
-                          <path d="M5.5 5L11 12L5.5 19L7 20L13 12L7 4L5.5 5Z"/>
-                          <path d="M10.5 5L16 12L10.5 19L12 20L18 12L12 4L10.5 5Z"/>
-                        </svg>
+                        <div className={`w-5 h-5 -ml-0.5 flex-shrink-0 rounded-full flex items-center justify-center ${
+                          isCompleted
+                            ? 'bg-emerald-500'
+                            : isCurrent
+                            ? 'bg-green-500'
+                            : 'bg-slate-300'
+                        }`}>
+                          <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8 5L19 12L8 19V5Z"/>
+                          </svg>
+                        </div>
                       )}
                     </div>
                   );
