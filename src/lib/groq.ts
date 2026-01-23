@@ -254,7 +254,7 @@ export async function processTaskChat(
         const name1 = match[1].trim();
         const name2 = match[2].trim();
         extractedName = name1; // Primary assignee is first name
-        alternatives = [name1, name2]; // Both names in alternatives
+        alternatives = [name2]; // Only the additional name (not the primary)
         isJoint = true;
       }
     }
