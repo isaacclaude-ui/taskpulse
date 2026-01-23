@@ -97,20 +97,38 @@ export async function POST(request: NextRequest) {
       const step = data.pipeline_steps[i];
       const existingAssignment = memberAssignments?.[i];
 
+      // Handle new assignment structure: { memberId, isJoint, additionalMemberIds }
+      // Also support legacy string format for backward compatibility
+      const assignmentObj = typeof existingAssignment === 'object' && existingAssignment !== null
+        ? existingAssignment
+        : { memberId: existingAssignment, isJoint: false, additionalMemberIds: [] };
+
       // If we already have a valid member ID, use it
-      if (existingAssignment && existingAssignment !== 'null' && existingAssignment !== '') {
-        stepAssignments.push(existingAssignment);
+      if (assignmentObj.memberId && assignmentObj.memberId !== 'null' && assignmentObj.memberId !== '') {
+        stepAssignments.push(assignmentObj.memberId);
       } else {
-        // Get or create primary assignee
+        // Get or create primary assignee from extracted name
         const assignedName = step.assigned_to_name;
         stepAssignments.push(assignedName ? await getOrCreateMember(assignedName) : null);
       }
 
       // Handle joint assignments (additional assignees)
-      if (step.is_joint && step.additional_assignee_names && step.additional_assignee_names.length > 0) {
+      const userConfirmedAdditional = assignmentObj.additionalMemberIds || [];
+      if (userConfirmedAdditional.length > 0) {
+        const additionalIds: string[] = [];
+        for (let j = 0; j < userConfirmedAdditional.length; j++) {
+          const addId = userConfirmedAdditional[j];
+          if (addId && addId !== 'null' && addId !== '') {
+            additionalIds.push(addId);
+          } else if (step.additional_assignee_names && step.additional_assignee_names[j]) {
+            const memberId = await getOrCreateMember(step.additional_assignee_names[j]);
+            if (memberId) additionalIds.push(memberId);
+          }
+        }
+        stepAdditionalAssignees.push(additionalIds.length > 0 ? additionalIds : null);
+      } else if (step.is_joint && step.additional_assignee_names && step.additional_assignee_names.length > 0) {
         const additionalIds: string[] = [];
         for (const altName of step.additional_assignee_names) {
-          // Skip if same as primary
           if (altName === step.assigned_to_name) continue;
           const memberId = await getOrCreateMember(altName);
           if (memberId) additionalIds.push(memberId);

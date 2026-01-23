@@ -37,6 +37,11 @@ interface ConfirmedAssignment {
   memberName: string;       // Display name (from team or extracted)
   isConfirmed: boolean;     // Has user explicitly confirmed?
   extractedName: string | null; // Original name from AI
+  // Joint task support
+  isJoint: boolean;
+  additionalMemberIds: (string | null)[]; // Additional assignees for joint tasks
+  additionalMemberNames: string[];
+  additionalExtractedNames: string[];
 }
 
 // Helper to safely format dates
@@ -151,12 +156,16 @@ function AddLogPageContent() {
         setReadyToCreate(true);
 
         // Set up confirmed assignments from existing task
-        const assignments: ConfirmedAssignment[] = task.pipeline_steps.map((step: { assigned_to: string | null; member?: { name: string } }, index: number) => ({
+        const assignments: ConfirmedAssignment[] = task.pipeline_steps.map((step: { assigned_to: string | null; member?: { name: string }; is_joint?: boolean; additional_assignees?: string[]; additional_members?: { id: string; name: string }[] }, index: number) => ({
           stepIndex: index,
           memberId: step.assigned_to,
           memberName: step.member?.name || '',
           isConfirmed: !!step.assigned_to,
           extractedName: step.member?.name || null,
+          isJoint: step.is_joint || false,
+          additionalMemberIds: step.additional_assignees || [],
+          additionalMemberNames: step.additional_members?.map(m => m.name) || [],
+          additionalExtractedNames: step.additional_members?.map(m => m.name) || [],
         }));
         setConfirmedAssignments(assignments);
 
@@ -225,12 +234,29 @@ function AddLogPageContent() {
       // Initialize confirmed assignments from AI matches
       const initialAssignments: ConfirmedAssignment[] = data.extracted_data.pipeline_steps.map((step, index) => {
         const match = data.matched_members.find(m => m.step_index === index);
+
+        // Handle additional assignees for joint tasks
+        const additionalNames = step.additional_assignee_names || [];
+        const additionalMatches = additionalNames.map(name => {
+          // Try to find a matching team member for each additional name
+          const found = data.team_members?.find((m: Member) =>
+            m.name.toLowerCase().includes(name.toLowerCase()) ||
+            name.toLowerCase().includes(m.name.toLowerCase())
+          );
+          return found ? { id: found.id, name: found.name } : { id: null, name };
+        });
+
         return {
           stepIndex: index,
           memberId: match?.member_id || null,
           memberName: match?.member_name || step.assigned_to_name || '',
           isConfirmed: !!match, // Auto-confirmed if AI found a match
           extractedName: step.assigned_to_name || null,
+          // Joint task fields
+          isJoint: step.is_joint || false,
+          additionalMemberIds: additionalMatches.map(m => m.id),
+          additionalMemberNames: additionalMatches.map(m => m.name),
+          additionalExtractedNames: additionalNames,
         };
       });
       setConfirmedAssignments(initialAssignments);
@@ -258,7 +284,11 @@ function AddLogPageContent() {
       // Build member assignments from USER-CONFIRMED selections (not just AI matches)
       const memberAssignments = extractedData.pipeline_steps.map((_, index) => {
         const confirmed = confirmedAssignments.find(a => a.stepIndex === index);
-        return confirmed?.memberId || null;
+        return {
+          memberId: confirmed?.memberId || null,
+          isJoint: confirmed?.isJoint || false,
+          additionalMemberIds: confirmed?.additionalMemberIds || [],
+        };
       });
 
       // Include recurrence in extracted data
@@ -299,6 +329,26 @@ function AddLogPageContent() {
           memberId,
           memberName,
           isConfirmed: true,
+        };
+      }
+      return updated;
+    });
+  };
+
+  // Handle user changing an additional assignee (for joint tasks)
+  const handleAdditionalAssignmentChange = (stepIndex: number, additionalIndex: number, memberId: string | null, memberName: string) => {
+    setConfirmedAssignments(prev => {
+      const updated = [...prev];
+      const existing = updated.findIndex(a => a.stepIndex === stepIndex);
+      if (existing >= 0) {
+        const newAdditionalMemberIds = [...updated[existing].additionalMemberIds];
+        const newAdditionalMemberNames = [...updated[existing].additionalMemberNames];
+        newAdditionalMemberIds[additionalIndex] = memberId;
+        newAdditionalMemberNames[additionalIndex] = memberName;
+        updated[existing] = {
+          ...updated[existing],
+          additionalMemberIds: newAdditionalMemberIds,
+          additionalMemberNames: newAdditionalMemberNames,
         };
       }
       return updated;
@@ -508,6 +558,60 @@ function AddLogPageContent() {
                                 ))}
                               </optgroup>
                             </select>
+
+                            {/* Additional assignees for joint tasks */}
+                            {confirmed?.isJoint && confirmed.additionalExtractedNames.length > 0 && (
+                              <div className="mt-2 pt-2 border-t border-teal-200/50">
+                                <div className="flex items-center gap-1 mb-1">
+                                  <span className="text-[10px] text-purple-600 font-medium">Joint task — also assigned:</span>
+                                </div>
+                                {confirmed.additionalExtractedNames.map((addName, addIdx) => {
+                                  const addMemberId = confirmed.additionalMemberIds[addIdx];
+                                  const hasAddMatch = addMemberId !== null;
+                                  return (
+                                    <div key={addIdx} className="mt-1">
+                                      <div className="flex items-center gap-1 mb-1">
+                                        <span className="text-[10px] text-gray-500">AI found:</span>
+                                        <span className={`text-[10px] font-medium ${hasAddMatch ? 'text-teal-600' : 'text-amber-600'}`}>
+                                          &quot;{addName}&quot;
+                                        </span>
+                                        {!hasAddMatch && (
+                                          <span className="text-[10px] text-amber-500">(new)</span>
+                                        )}
+                                      </div>
+                                      <select
+                                        value={addMemberId || '__new__'}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          if (val === '__new__') {
+                                            handleAdditionalAssignmentChange(i, addIdx, null, addName);
+                                          } else {
+                                            const selectedMember = teamMembers.find(m => m.id === val);
+                                            handleAdditionalAssignmentChange(i, addIdx, val, selectedMember?.name || '');
+                                          }
+                                        }}
+                                        className={`w-full text-xs p-1.5 rounded border ${
+                                          hasAddMatch
+                                            ? 'border-teal-300 bg-white text-teal-800'
+                                            : 'border-amber-300 bg-white text-amber-800'
+                                        } focus:outline-none focus:ring-1 focus:ring-teal-500`}
+                                      >
+                                        <option value="__new__">
+                                          ➕ Create &quot;{addName}&quot; as new member
+                                        </option>
+                                        <optgroup label="Existing team members">
+                                          {teamMembers.filter(m => !m.is_archived).map(m => (
+                                            <option key={m.id} value={m.id}>
+                                              {m.name} {m.name.toLowerCase().includes(addName.toLowerCase()) ? '✓' : ''}
+                                            </option>
+                                          ))}
+                                        </optgroup>
+                                      </select>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
                         )}
 
