@@ -137,30 +137,40 @@ export default function DashboardSummary({ tasks, members }: DashboardSummaryPro
                 </div>
               </div>
 
-              {/* Progress bar - pill style with arrows and text */}
+              {/* Progress bar - pill style with text reveal effect */}
               <div className="relative h-6 mb-2">
                 {/* Track - rounded pill with inset shadow */}
                 <div className="absolute inset-0 bg-slate-200 rounded-full shadow-inner" />
-                {/* Progress fill - only show when progress > 0 */}
-                {pipeline.completed > 0 && (
-                  <div
-                    className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 overflow-hidden flex items-center ${
-                      pipeline.completed === pipeline.total
-                        ? 'bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-500'
-                        : 'bg-gradient-to-r from-emerald-400 via-green-500 to-teal-500'
-                    }`}
-                    style={{ width: `${Math.max((pipeline.completed / pipeline.total) * 100, 25)}%` }}
-                  >
-                    {/* Arrows pattern overlay */}
-                    <div className="absolute inset-0 flex items-center justify-end pr-1 opacity-30">
-                      <span className="text-white text-xs font-bold tracking-tight">› › › › › › › › › ›</span>
-                    </div>
-                    {/* Progress text */}
-                    <span className="relative z-10 text-white text-[10px] font-bold uppercase tracking-wider pl-3 whitespace-nowrap">
+
+                {/* Fixed text layer - grey (visible on unfilled track) */}
+                <div className="absolute inset-0 flex items-center px-3 pointer-events-none">
+                  <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
+                    Progress
+                  </span>
+                  <span className="ml-auto text-slate-400 text-xs font-bold tracking-tight opacity-50">
+                    › › › › › › › › › ›
+                  </span>
+                </div>
+
+                {/* Progress fill with clipped white text */}
+                <div
+                  className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 overflow-hidden ${
+                    pipeline.completed === pipeline.total
+                      ? 'bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-500'
+                      : 'bg-gradient-to-r from-emerald-400 via-green-500 to-teal-500'
+                  }`}
+                  style={{ width: `${(pipeline.completed / pipeline.total) * 100}%` }}
+                >
+                  {/* White text layer - clipped by fill */}
+                  <div className="absolute inset-0 flex items-center px-3">
+                    <span className="text-white text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
                       Progress
                     </span>
+                    <span className="ml-auto text-white text-xs font-bold tracking-tight opacity-50">
+                      › › › › › › › › › ›
+                    </span>
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Current step info */}

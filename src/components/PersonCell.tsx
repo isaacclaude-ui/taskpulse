@@ -184,7 +184,7 @@ export default function PersonCell({
           <div className="flex gap-1 mt-auto pt-1.5">
             {!isFirst && !step.is_joint && (
               <button
-                className="flex-1 text-[9px] bg-gray-400 text-white px-1 py-0.5 rounded font-medium transition-all duration-150 ease-out hover:bg-gray-500 hover:scale-[1.03] active:scale-95"
+                className="flex-1 text-[9px] bg-gradient-to-r from-slate-400 via-slate-500 to-slate-600 text-white px-2 py-1 rounded font-semibold shadow-sm transition-all duration-150 ease-out hover:from-slate-500 hover:to-slate-700 hover:scale-[1.03] active:scale-95"
                 onClick={(e) => {
                   e.stopPropagation();
                   onStepReturn(step.id);
@@ -194,7 +194,7 @@ export default function PersonCell({
               </button>
             )}
             <button
-              className="flex-1 text-[9px] bg-green-500 text-white px-1 py-0.5 rounded font-medium transition-all duration-150 ease-out hover:bg-green-600 hover:scale-[1.03] active:scale-95"
+              className="flex-1 text-[9px] bg-gradient-to-r from-emerald-400 via-green-500 to-teal-500 text-white px-2 py-1 rounded font-semibold shadow-sm transition-all duration-150 ease-out hover:from-emerald-500 hover:to-teal-600 hover:scale-[1.03] active:scale-95"
               onClick={(e) => {
                 e.stopPropagation();
                 onStepComplete(step.id);
