@@ -154,20 +154,20 @@ export default function DashboardSummary({ tasks, members }: DashboardSummaryPro
                             : 'bg-slate-200'
                         }`}
                       />
-                      {/* Arrow tip on last segment - stylized arrowhead */}
+                      {/* Arrow tip on last segment - glowing arrowhead */}
                       {isLast && (
                         <svg
-                          className={`w-3.5 h-3.5 -ml-px flex-shrink-0 transition-all ${
+                          className={`w-5 h-5 -ml-0.5 flex-shrink-0 transition-all ${
                             isCompleted
-                              ? 'text-emerald-500'
+                              ? 'text-emerald-500 drop-shadow-[0_0_6px_rgba(16,185,129,0.7)]'
                               : isCurrent
-                              ? 'text-green-500'
-                              : 'text-slate-200'
+                              ? 'text-green-500 drop-shadow-[0_0_6px_rgba(34,197,94,0.7)]'
+                              : 'text-slate-300'
                           }`}
-                          viewBox="0 0 12 12"
+                          viewBox="0 0 24 24"
                           fill="currentColor"
                         >
-                          <path d="M2 1L10 6L2 11V1Z"/>
+                          <path d="M4 4L18 12L4 20V4Z"/>
                         </svg>
                       )}
                     </div>
