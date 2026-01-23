@@ -259,6 +259,13 @@ export async function processTaskChat(
       }
     }
 
+    // Also filter out the primary name if AI included it in alternatives
+    if (extractedName && alternatives.length > 0) {
+      const primaryLower = extractedName.toLowerCase();
+      alternatives = alternatives.filter(alt => alt.toLowerCase() !== primaryLower);
+      isJoint = alternatives.length > 0;
+    }
+
     // WE do the matching, not the AI
     if (extractedName) {
       const matchedMember = matchNameToMember(extractedName, teamMembers);
