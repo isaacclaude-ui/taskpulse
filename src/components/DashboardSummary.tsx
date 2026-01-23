@@ -137,7 +137,7 @@ export default function DashboardSummary({ tasks, members }: DashboardSummaryPro
                 </div>
               </div>
 
-              {/* Segmented progress bar */}
+              {/* Segmented progress bar with arrow */}
               <div className="flex items-center gap-1 mb-2">
                 {Array.from({ length: pipeline.total }).map((_, i) => {
                   const isCompleted = i < pipeline.completed;
@@ -146,7 +146,7 @@ export default function DashboardSummary({ tasks, members }: DashboardSummaryPro
                   return (
                     <div key={i} className="flex-1 flex items-center">
                       <div
-                        className={`h-2 flex-1 ${isLast ? 'rounded-l-full' : 'rounded-full'} transition-all ${
+                        className={`h-2.5 flex-1 ${isLast ? 'rounded-l-full' : 'rounded-full'} transition-all ${
                           isCompleted
                             ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
                             : isCurrent
@@ -154,17 +154,21 @@ export default function DashboardSummary({ tasks, members }: DashboardSummaryPro
                             : 'bg-slate-200'
                         }`}
                       />
-                      {/* Arrow tip on last segment */}
+                      {/* Arrow tip on last segment - stylized arrowhead */}
                       {isLast && (
-                        <div
-                          className={`w-0 h-0 border-t-[5px] border-b-[5px] border-l-[6px] border-t-transparent border-b-transparent ${
+                        <svg
+                          className={`w-3.5 h-3.5 -ml-px flex-shrink-0 transition-all ${
                             isCompleted
-                              ? 'border-l-emerald-500'
+                              ? 'text-emerald-500'
                               : isCurrent
-                              ? 'border-l-green-500'
-                              : 'border-l-slate-200'
+                              ? 'text-green-500'
+                              : 'text-slate-200'
                           }`}
-                        />
+                          viewBox="0 0 12 12"
+                          fill="currentColor"
+                        >
+                          <path d="M2 1L10 6L2 11V1Z"/>
+                        </svg>
                       )}
                     </div>
                   );
