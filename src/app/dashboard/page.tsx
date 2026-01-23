@@ -405,7 +405,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="glass-bg min-h-screen flex flex-col">
+    <div className="glass-bg min-h-screen flex flex-col w-full max-w-full overflow-x-hidden">
       {/* Header */}
       <header className="header-banner">
         <div className="header-banner-content px-2 sm:px-4 py-3 sm:py-6">
@@ -548,7 +548,7 @@ export default function DashboardPage() {
       </header>
 
       {/* Announcements, Shared Links & Calendar Section */}
-      <div className="max-w-7xl mx-auto px-4 py-3 overflow-x-hidden">
+      <div className="w-full max-w-7xl mx-auto px-4 py-3">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3" style={{ minHeight: '16vh' }}>
           {/* Announcements - Left */}
           <div className="glass-card rounded-xl p-3 flex flex-col">
