@@ -98,7 +98,7 @@ export default function PipelineGrid({
             <tr className="bg-gradient-to-r from-slate-100 to-gray-50">
               {/* Pipeline header - frozen corner */}
               <th
-                className="sticky top-0 left-0 z-30 bg-gradient-to-r from-teal-600 to-teal-700 border-b border-r border-teal-700 p-3 text-left font-semibold text-white text-sm shadow-sm border-l-[3px] border-l-teal-400"
+                className="sticky top-0 left-0 z-30 bg-gradient-to-r from-teal-600 to-teal-700 border-b border-r border-teal-700 p-3 text-left font-semibold text-white text-sm shadow-sm"
                 style={{ width: `${TASK_COL_WIDTH}px`, minWidth: `${TASK_COL_WIDTH}px`, maxWidth: `${TASK_COL_WIDTH}px` }}
               >
                 <div className="flex items-center gap-2">
@@ -112,7 +112,7 @@ export default function PipelineGrid({
               {displayMembers.map((member) => (
                 <th
                   key={member.id}
-                  className="sticky top-0 z-20 bg-gradient-to-b from-slate-50 to-white border-b border-l border-gray-200 p-3 font-semibold text-slate-700 text-sm text-center"
+                  className="sticky top-0 z-20 bg-gradient-to-b from-slate-100 via-slate-50 to-white border-b border-l border-gray-200 p-3 font-semibold text-slate-700 text-sm text-center"
                   style={{ width: `${MEMBER_COL_WIDTH}px`, minWidth: `${MEMBER_COL_WIDTH}px`, maxWidth: `${MEMBER_COL_WIDTH}px` }}
                 >
                   <div className="truncate" title={member.name}>{member.name}</div>

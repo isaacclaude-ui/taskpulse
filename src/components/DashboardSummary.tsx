@@ -147,12 +147,9 @@ export default function DashboardSummary({ tasks, members }: DashboardSummaryPro
                   <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
                     Progress
                   </span>
-                  <span className="ml-auto text-slate-400 text-xs font-bold tracking-tight opacity-50">
-                    › › › › › › › › › ›
-                  </span>
                 </div>
 
-                {/* Progress fill with clipped white text */}
+                {/* Progress fill with clipped white text and arrows */}
                 <div
                   className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 overflow-hidden ${
                     pipeline.completed === pipeline.total
@@ -161,13 +158,13 @@ export default function DashboardSummary({ tasks, members }: DashboardSummaryPro
                   }`}
                   style={{ width: `${(pipeline.completed / pipeline.total) * 100}%` }}
                 >
-                  {/* White text layer - clipped by fill */}
+                  {/* White text and arrows - clipped by fill */}
                   <div className="absolute inset-0 flex items-center px-3">
                     <span className="text-white text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
                       Progress
                     </span>
-                    <span className="ml-auto text-white text-xs font-bold tracking-tight opacity-50">
-                      › › › › › › › › › ›
+                    <span className="ml-auto text-white text-xs font-bold tracking-tight opacity-60 whitespace-nowrap">
+                      › › › › › › ›
                     </span>
                   </div>
                 </div>
