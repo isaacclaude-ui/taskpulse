@@ -67,14 +67,16 @@ ${existingTaskContext}
 
    "Lisa does blog" → who:"Lisa" (NOT null, NOT "Admin User")
 
-2. **JOINT ASSIGNMENTS - "X or Y" patterns:**
-   When user says "X or Y can do..." or "either X or Y..." or "X/Y does..."
+2. **JOINT ASSIGNMENTS - "X or Y" and "X can also do" patterns:**
+   When user says "X or Y can do..." or "either X or Y..." or "X/Y does..." or "X can also do..."
    → Set is_joint: true, who: first name, who_alternatives: [all names]
 
    Examples:
    "George or Ethan can do step 3" → {what:"Step 3", who:"George", who_alternatives:["George","Ethan"], is_joint:true}
    "Maya/David reviews" → {what:"Review", who:"Maya", who_alternatives:["Maya","David"], is_joint:true}
    "either Lisa or Tom approves" → {what:"Approve", who:"Lisa", who_alternatives:["Lisa","Tom"], is_joint:true}
+   "William can also do step 3" → Keep existing who, ADD William to who_alternatives, set is_joint:true
+   "both Fuchen and William can do step 3" → {who:"Fuchen", who_alternatives:["Fuchen","William"], is_joint:true}
 
 3. **UNDERSTAND context:**
    - "Lisa finished" → mark Lisa's step as completed
