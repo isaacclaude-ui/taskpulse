@@ -273,8 +273,31 @@ export default function TaskEditModal({
       setMessages([...updatedMessages, aiMessage]);
 
       // Update extraction state (normalize dates for input fields)
-      setExtractedData(normalizeExtractedDates(data.extracted_data));
+      const normalizedData = normalizeExtractedDates(data.extracted_data);
+      setExtractedData(normalizedData);
       setMatchedMembers(data.matched_members || []);
+
+      // Update confirmedAssignments with new joint task info from AI
+      setConfirmedAssignments(prev => {
+        return normalizedData.pipeline_steps.map((step, index) => {
+          const existing = prev.find(a => a.stepIndex === index);
+          const match = data.matched_members?.find((m: { step_index: number }) => m.step_index === index);
+
+          return {
+            stepIndex: index,
+            memberId: match?.member_id || existing?.memberId || null,
+            memberName: match?.member_name || existing?.memberName || step.assigned_to_name || '',
+            isConfirmed: !!match || existing?.isConfirmed || false,
+            extractedName: step.assigned_to_name || null,
+            isLocked: existing?.isLocked || step.status === 'completed',
+            // Update joint task fields from AI response
+            isJoint: step.is_joint || false,
+            additionalMemberIds: existing?.additionalMemberIds || [],
+            additionalMemberNames: step.additional_assignee_names || [],
+            additionalExtractedNames: step.additional_assignee_names || [],
+          };
+        });
+      });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to process message');
     }
