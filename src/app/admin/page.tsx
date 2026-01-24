@@ -180,9 +180,9 @@ export default function AdminPage() {
 
         setTeams(teamsData.teams || []);
         setMembers(
-          (membersData.members || []).map((m: Member & { teams?: { id: string }[] }) => ({
+          (membersData.members || []).map((m: Member & { teams?: { id: string }[], teamIds?: string[] }) => ({
             ...m,
-            teamIds: m.teams?.map((t) => t.id) || [],
+            teamIds: m.teamIds || m.teams?.map((t) => t.id) || [],
           }))
         );
         setPendingUsers(pendingData.pendingUsers || []);
@@ -208,12 +208,12 @@ export default function AdminPage() {
         setTeams(leadTeams);
         // Filter members to only those in lead's team
         const teamMembers = (membersData.members || [])
-          .filter((m: Member & { teams?: { id: string }[] }) =>
-            m.teams?.some((t) => t.id === team.id)
+          .filter((m: Member & { teams?: { id: string }[], teamIds?: string[] }) =>
+            m.teamIds?.includes(team.id) || m.teams?.some((t) => t.id === team.id)
           )
-          .map((m: Member & { teams?: { id: string }[] }) => ({
+          .map((m: Member & { teams?: { id: string }[], teamIds?: string[] }) => ({
             ...m,
-            teamIds: m.teams?.map((t) => t.id) || [],
+            teamIds: m.teamIds || m.teams?.map((t) => t.id) || [],
           }));
         setMembers(teamMembers);
         // Filter pending to only those requesting lead's team
