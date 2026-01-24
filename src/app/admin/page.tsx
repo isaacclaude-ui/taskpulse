@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import { useNav } from '@/context/NavContext';
 import type { Team, Member, PendingUser, Announcement, SharedLink, CalendarEvent } from '@/types';
@@ -44,9 +44,23 @@ interface MemberWithTeams extends Member {
 
 export default function AdminPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { business, member, team, teamId } = useNav();
 
-  const [activeTab, setActiveTab] = useState<Tab>('settings');
+  // Get initial tab from URL or default to 'settings'
+  const tabFromUrl = searchParams.get('tab') as Tab | null;
+  const validTabs: Tab[] = ['settings', 'teams', 'members', 'pending', 'notifications', 'content'];
+  const initialTab = tabFromUrl && validTabs.includes(tabFromUrl) ? tabFromUrl : 'settings';
+
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
+
+  // Update URL when tab changes (without full page reload)
+  const handleTabChange = (tab: Tab) => {
+    setActiveTab(tab);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', tab);
+    router.replace(`/admin?${params.toString()}`, { scroll: false });
+  };
   const [teams, setTeams] = useState<Team[]>([]);
   const [members, setMembers] = useState<MemberWithTeams[]>([]);
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
@@ -146,8 +160,10 @@ export default function AdminPage() {
         return;
       }
       // Set default tab based on role - leads only see content/notifications
-      if (member.role === 'lead') {
+      // Only override if no tab was specified in URL
+      if (member.role === 'lead' && !tabFromUrl) {
         setActiveTab('content');
+        router.replace('/admin?tab=content', { scroll: false });
       }
       loadData();
     }
@@ -875,7 +891,7 @@ export default function AdminPage() {
           {isAdmin && (
             <>
               <button
-                onClick={() => setActiveTab('settings')}
+                onClick={() => handleTabChange('settings')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
                   activeTab === 'settings'
                     ? 'bg-teal-600 text-white'
@@ -889,7 +905,7 @@ export default function AdminPage() {
                 Settings
               </button>
               <button
-                onClick={() => setActiveTab('teams')}
+                onClick={() => handleTabChange('teams')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
                   activeTab === 'teams'
                     ? 'bg-teal-600 text-white'
@@ -905,7 +921,7 @@ export default function AdminPage() {
           )}
           {/* Members + Pending tabs - Admin + Lead */}
           <button
-            onClick={() => setActiveTab('members')}
+            onClick={() => handleTabChange('members')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
               activeTab === 'members'
                 ? 'bg-teal-600 text-white'
@@ -918,7 +934,7 @@ export default function AdminPage() {
             {isLead ? 'Team Members' : 'Members'}
           </button>
           <button
-            onClick={() => setActiveTab('pending')}
+            onClick={() => handleTabChange('pending')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
               activeTab === 'pending'
                 ? 'bg-teal-600 text-white'
@@ -937,7 +953,7 @@ export default function AdminPage() {
           </button>
           {/* Shared tabs - Notifications and Content */}
           <button
-            onClick={() => setActiveTab('notifications')}
+            onClick={() => handleTabChange('notifications')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
               activeTab === 'notifications'
                 ? 'bg-teal-600 text-white'
@@ -951,7 +967,7 @@ export default function AdminPage() {
           </button>
           <button
             onClick={() => {
-              setActiveTab('content');
+              handleTabChange('content');
               if (teams.length > 0 && !selectedTeamForContent) {
                 setSelectedTeamForContent(teams[0].id);
                 loadContent(teams[0].id);
@@ -1099,210 +1115,280 @@ export default function AdminPage() {
                   </span>
                 </div>
 
-                {/* Members table */}
-                <div className="mt-4 overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-2 sm:px-3 text-sm font-medium text-gray-600 whitespace-nowrap">Name</th>
-                        <th className="text-left py-3 px-2 sm:px-3 text-sm font-medium text-gray-600 whitespace-nowrap">Email</th>
-                        <th className="text-left py-3 px-2 sm:px-3 text-sm font-medium text-gray-600 whitespace-nowrap hidden md:table-cell">Teams</th>
-                        <th className="text-left py-3 px-2 sm:px-3 text-sm font-medium text-gray-600 whitespace-nowrap hidden sm:table-cell">Role</th>
-                        <th className="text-center py-3 px-2 sm:px-3 text-sm font-medium text-gray-600 whitespace-nowrap">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {members
-                        .filter(m => {
-                          if (memberTeamFilter === 'all') return true;
-                          if (memberTeamFilter === 'none') return !m.teamIds || m.teamIds.length === 0;
-                          return m.teamIds?.includes(memberTeamFilter);
-                        })
-                        .map((m) => {
-                          const memberTeams = teams.filter(t => m.teamIds?.includes(t.id));
-                          return (
-                        <tr key={m.id} className="hover:bg-gray-50">
-                          {/* Name column */}
-                          <td className="py-3 px-2 sm:px-3">
-                            {editingMemberId === m.id ? (
-                              <div className="flex items-center gap-1">
-                                <input
-                                  type="text"
-                                  value={editingMemberName}
-                                  onChange={(e) => setEditingMemberName(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleUpdateMemberName(m.id);
-                                    if (e.key === 'Escape') {
-                                      setEditingMemberId(null);
-                                      setEditingMemberName('');
-                                    }
-                                  }}
-                                  className="input-field text-sm py-1 px-2 w-full"
-                                  autoFocus
-                                />
-                                <button onClick={() => handleUpdateMemberName(m.id)} className="text-teal-600 hover:text-teal-700 p-1" title="Save">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-1.5">
-                                <button
-                                  onClick={() => { setEditingMemberId(m.id); setEditingMemberName(m.name); }}
-                                  className={`font-medium hover:text-teal-600 text-left truncate ${m.is_archived ? 'text-gray-400' : 'text-gray-900'}`}
-                                  title={m.name}
-                                >
-                                  {m.name}
-                                </button>
-                                {m.is_archived && (
-                                  <span className="text-[9px] bg-amber-100 text-amber-700 px-1 py-0.5 rounded shrink-0">Arc</span>
-                                )}
-                              </div>
-                            )}
-                          </td>
-                          {/* Email column - editable */}
-                          <td className="py-3 px-2 sm:px-3">
-                            {editingMemberEmailId === m.id ? (
-                              <div className="flex items-center gap-1">
-                                <input
-                                  type="email"
-                                  value={editingMemberEmail}
-                                  onChange={(e) => setEditingMemberEmail(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleUpdateMemberEmail(m.id);
-                                    if (e.key === 'Escape') {
-                                      setEditingMemberEmailId(null);
-                                      setEditingMemberEmail('');
-                                    }
-                                  }}
-                                  placeholder="email@example.com"
-                                  className="input-field text-sm py-1 px-2 w-full"
-                                  autoFocus
-                                />
-                                <button onClick={() => handleUpdateMemberEmail(m.id)} className="text-teal-600 hover:text-teal-700 p-1" title="Save">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() => { setEditingMemberEmailId(m.id); setEditingMemberEmail(m.email || ''); }}
-                                className="text-sm text-gray-600 hover:text-teal-600 truncate block text-left w-full"
-                                title={m.email || 'Click to add email'}
-                              >
-                                {m.email || <span className="text-gray-400">+ Add email</span>}
-                              </button>
-                            )}
-                          </td>
-                          {/* Teams column - dropdown selector, hidden on mobile */}
-                          <td className="py-3 px-2 sm:px-3 hidden md:table-cell">
-                            <div className="relative group">
-                              <div className="flex flex-nowrap gap-1 min-h-[24px] overflow-hidden">
-                                {memberTeams.length > 0 ? (
-                                  memberTeams.slice(0, 3).map(t => (
-                                    <span key={t.id} className="text-xs bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded truncate max-w-[60px] shrink-0" title={t.name}>
-                                      {t.name}
-                                    </span>
-                                  ))
-                                ) : (
-                                  <span className="text-xs text-gray-400">None</span>
-                                )}
-                                {memberTeams.length > 3 && (
-                                  <span className="text-xs text-gray-500 shrink-0">+{memberTeams.length - 3}</span>
-                                )}
-                              </div>
-                              {/* Dropdown on hover */}
-                              <div className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all min-w-[160px]">
-                                <div className="text-xs text-gray-500 mb-1.5 font-medium">Assign to teams:</div>
-                                <div className="space-y-1 max-h-[150px] overflow-y-auto">
-                                  {teams.map(t => {
-                                    const isInTeam = m.teamIds?.includes(t.id);
-                                    return (
-                                      <label key={t.id} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-gray-50 p-1 rounded">
-                                        <input
-                                          type="checkbox"
-                                          checked={isInTeam}
-                                          onChange={() => {
-                                            const newTeamIds = isInTeam
-                                              ? m.teamIds.filter((id: string) => id !== t.id)
-                                              : [...(m.teamIds || []), t.id];
-                                            handleUpdateMemberTeams(m.id, newTeamIds);
-                                          }}
-                                          className="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
-                                        />
-                                        <span className={isInTeam ? 'text-teal-700 font-medium' : 'text-gray-600'}>{t.name}</span>
-                                      </label>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          {/* Role column - hidden on small mobile */}
-                          <td className="py-3 px-2 sm:px-3 hidden sm:table-cell">
-                            <select
-                              value={m.role}
-                              onChange={(e) => handleUpdateMemberRole(m.id, e.target.value)}
-                              className="text-xs border border-gray-200 rounded px-1 sm:px-2 py-1 bg-white w-full"
-                            >
-                              <option value="user">Staff</option>
-                              <option value="lead">Lead</option>
-                              <option value="admin">Admin</option>
-                            </select>
-                          </td>
-                          {/* Actions column - fixed width for alignment */}
-                          <td className="py-3 px-1 sm:px-3">
-                            <div className="flex items-center justify-center gap-0.5">
-                              {/* Email slot - always reserve space */}
-                              <div className="w-6 h-6 flex items-center justify-center">
-                                {m.email ? (
-                                  <button
-                                    onClick={() => handleSendInvite(m.id, m.email, m.name)}
-                                    disabled={sendingInvite === m.id}
-                                    className="text-gray-400 hover:text-teal-600 p-1 rounded hover:bg-teal-50 disabled:opacity-50"
-                                    title="Send invite"
-                                  >
-                                    {sendingInvite === m.id ? (
-                                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                      </svg>
-                                    ) : (
-                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                      </svg>
-                                    )}
-                                  </button>
-                                ) : null}
-                              </div>
-                              {/* Archive/Restore slot */}
-                              {m.is_archived ? (
-                                <button onClick={() => handleUnarchiveMember(m.id)} className="text-amber-500 hover:text-amber-600 p-1" title="Restore">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                  </svg>
-                                </button>
-                              ) : (
-                                <button onClick={() => handleArchiveMember(m.id)} className="text-gray-400 hover:text-amber-600 p-1" title="Archive">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                                  </svg>
-                                </button>
-                              )}
-                              <button onClick={() => handleDeleteMember(m.id)} className="text-gray-400 hover:text-red-600 p-1" title="Delete">
+                {/* Members table - grouped by category */}
+                <div className="mt-4 space-y-6">
+                  {(() => {
+                    // Filter members based on team filter
+                    const filteredMembers = members.filter(m => {
+                      if (memberTeamFilter === 'all') return true;
+                      if (memberTeamFilter === 'none') return !m.teamIds || m.teamIds.length === 0;
+                      return m.teamIds?.includes(memberTeamFilter);
+                    });
+
+                    // Group members: Admins first, then by team
+                    const adminMembers = filteredMembers.filter(m => m.role === 'admin');
+                    const unassignedMembers = filteredMembers.filter(m => m.role !== 'admin' && (!m.teamIds || m.teamIds.length === 0));
+
+                    // Group non-admin members by their team
+                    const membersByTeam: { [teamId: string]: typeof filteredMembers } = {};
+                    teams.forEach(t => {
+                      membersByTeam[t.id] = filteredMembers.filter(m =>
+                        m.role !== 'admin' && m.teamIds?.includes(t.id)
+                      );
+                    });
+
+                    // Render a member row
+                    const renderMemberRow = (m: MemberWithTeams, showTeamSelector: boolean = false) => (
+                      <tr key={m.id} className="hover:bg-gray-50">
+                        {/* Name column */}
+                        <td className="py-3 px-2 sm:px-3">
+                          {editingMemberId === m.id ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="text"
+                                value={editingMemberName}
+                                onChange={(e) => setEditingMemberName(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleUpdateMemberName(m.id);
+                                  if (e.key === 'Escape') {
+                                    setEditingMemberId(null);
+                                    setEditingMemberName('');
+                                  }
+                                }}
+                                className="input-field text-sm py-1 px-2 w-full"
+                                autoFocus
+                              />
+                              <button onClick={() => handleUpdateMemberName(m.id)} className="text-teal-600 hover:text-teal-700 p-1" title="Save">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
                               </button>
                             </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => { setEditingMemberId(m.id); setEditingMemberName(m.name); }}
+                                className={`font-medium hover:text-teal-600 text-left truncate ${m.is_archived ? 'text-gray-400' : 'text-gray-900'}`}
+                                title={m.name}
+                              >
+                                {m.name}
+                              </button>
+                              {m.is_archived && (
+                                <span className="text-[9px] bg-amber-100 text-amber-700 px-1 py-0.5 rounded shrink-0">Arc</span>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                        {/* Email column */}
+                        <td className="py-3 px-2 sm:px-3">
+                          {editingMemberEmailId === m.id ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="email"
+                                value={editingMemberEmail}
+                                onChange={(e) => setEditingMemberEmail(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleUpdateMemberEmail(m.id);
+                                  if (e.key === 'Escape') {
+                                    setEditingMemberEmailId(null);
+                                    setEditingMemberEmail('');
+                                  }
+                                }}
+                                placeholder="email@example.com"
+                                className="input-field text-sm py-1 px-2 w-full"
+                                autoFocus
+                              />
+                              <button onClick={() => handleUpdateMemberEmail(m.id)} className="text-teal-600 hover:text-teal-700 p-1" title="Save">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => { setEditingMemberEmailId(m.id); setEditingMemberEmail(m.email || ''); }}
+                              className="text-sm text-gray-600 hover:text-teal-600 truncate block text-left w-full"
+                              title={m.email || 'Click to add email'}
+                            >
+                              {m.email || <span className="text-gray-400">+ Add email</span>}
+                            </button>
+                          )}
+                        </td>
+                        {/* Role column - hidden on small mobile */}
+                        <td className="py-3 px-2 sm:px-3 hidden sm:table-cell">
+                          <select
+                            value={m.role}
+                            onChange={(e) => handleUpdateMemberRole(m.id, e.target.value)}
+                            className="text-xs border border-gray-200 rounded px-1 sm:px-2 py-1 bg-white w-full"
+                          >
+                            <option value="user">Staff</option>
+                            <option value="lead">Lead</option>
+                            <option value="admin">Admin</option>
+                          </select>
+                        </td>
+                        {/* Team selector - only for admins or unassigned (hidden on mobile) */}
+                        {showTeamSelector && (
+                          <td className="py-3 px-2 sm:px-3 hidden md:table-cell">
+                            {m.role === 'admin' ? (
+                              <span className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">All Teams</span>
+                            ) : (
+                              <select
+                                value={m.teamIds?.[0] || ''}
+                                onChange={(e) => handleUpdateMemberTeams(m.id, e.target.value ? [e.target.value] : [])}
+                                className="text-xs border border-gray-200 rounded px-2 py-1 bg-white w-full"
+                              >
+                                <option value="">No Team</option>
+                                {teams.map(t => (
+                                  <option key={t.id} value={t.id}>{t.name}</option>
+                                ))}
+                              </select>
+                            )}
                           </td>
-                        </tr>
+                        )}
+                        {/* Actions column */}
+                        <td className="py-3 px-1 sm:px-3">
+                          <div className="flex items-center justify-center gap-0.5">
+                            <div className="w-6 h-6 flex items-center justify-center">
+                              {m.email ? (
+                                <button
+                                  onClick={() => handleSendInvite(m.id, m.email, m.name)}
+                                  disabled={sendingInvite === m.id}
+                                  className="text-gray-400 hover:text-teal-600 p-1 rounded hover:bg-teal-50 disabled:opacity-50"
+                                  title="Send invite"
+                                >
+                                  {sendingInvite === m.id ? (
+                                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                  ) : (
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                    </svg>
+                                  )}
+                                </button>
+                              ) : null}
+                            </div>
+                            {m.is_archived ? (
+                              <button onClick={() => handleUnarchiveMember(m.id)} className="text-amber-500 hover:text-amber-600 p-1" title="Restore">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                              </button>
+                            ) : (
+                              <button onClick={() => handleArchiveMember(m.id)} className="text-gray-400 hover:text-amber-600 p-1" title="Archive">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                                </svg>
+                              </button>
+                            )}
+                            <button onClick={() => handleDeleteMember(m.id)} className="text-gray-400 hover:text-red-600 p-1" title="Delete">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+
+                    return (
+                      <>
+                        {/* Admins Section */}
+                        {adminMembers.length > 0 && (
+                          <div className="border border-purple-200 rounded-lg overflow-hidden">
+                            <div className="bg-purple-50 px-4 py-2 border-b border-purple-200">
+                              <h3 className="text-sm font-semibold text-purple-700 flex items-center gap-2">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                </svg>
+                                Admins ({adminMembers.length})
+                              </h3>
+                            </div>
+                            <table className="w-full">
+                              <thead>
+                                <tr className="border-b border-gray-200 bg-gray-50">
+                                  <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500">Name</th>
+                                  <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500">Email</th>
+                                  <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden sm:table-cell">Role</th>
+                                  <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden md:table-cell">Access</th>
+                                  <th className="text-center py-2 px-2 sm:px-3 text-xs font-medium text-gray-500">Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-100">
+                                {adminMembers.map(m => renderMemberRow(m, true))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+
+                        {/* Team Sections */}
+                        {teams.map(team => {
+                          const teamMembers = membersByTeam[team.id] || [];
+                          if (teamMembers.length === 0 && memberTeamFilter !== 'all') return null;
+                          return (
+                            <div key={team.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                              <div className="bg-gradient-to-r from-teal-50 to-emerald-50 px-4 py-2 border-b border-gray-200">
+                                <h3 className="text-sm font-semibold text-teal-700 flex items-center gap-2">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                  </svg>
+                                  {team.name} ({teamMembers.length})
+                                </h3>
+                              </div>
+                              {teamMembers.length > 0 ? (
+                                <table className="w-full">
+                                  <thead>
+                                    <tr className="border-b border-gray-200 bg-gray-50">
+                                      <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500">Name</th>
+                                      <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500">Email</th>
+                                      <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden sm:table-cell">Role</th>
+                                      <th className="text-center py-2 px-2 sm:px-3 text-xs font-medium text-gray-500">Actions</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-gray-100">
+                                    {teamMembers.map(m => renderMemberRow(m, false))}
+                                  </tbody>
+                                </table>
+                              ) : (
+                                <div className="px-4 py-6 text-center text-sm text-gray-400">
+                                  No members in this team
+                                </div>
+                              )}
+                            </div>
                           );
                         })}
-                    </tbody>
-                  </table>
+
+                        {/* Unassigned Members */}
+                        {unassignedMembers.length > 0 && (
+                          <div className="border border-amber-200 rounded-lg overflow-hidden">
+                            <div className="bg-amber-50 px-4 py-2 border-b border-amber-200">
+                              <h3 className="text-sm font-semibold text-amber-700 flex items-center gap-2">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                No Team Assigned ({unassignedMembers.length})
+                              </h3>
+                            </div>
+                            <table className="w-full">
+                              <thead>
+                                <tr className="border-b border-gray-200 bg-gray-50">
+                                  <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500">Name</th>
+                                  <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500">Email</th>
+                                  <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden sm:table-cell">Role</th>
+                                  <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden md:table-cell">Assign To</th>
+                                  <th className="text-center py-2 px-2 sm:px-3 text-xs font-medium text-gray-500">Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-100">
+                                {unassignedMembers.map(m => renderMemberRow(m, true))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             )}
@@ -1568,81 +1654,166 @@ export default function AdminPage() {
                     No members with email found
                   </p>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-gray-200">
-                          <th className="text-left py-3 px-2 text-sm font-medium text-gray-600">Name</th>
-                          <th className="text-left py-3 px-2 text-sm font-medium text-gray-600">Role</th>
-                          <th className="text-left py-3 px-2 text-sm font-medium text-gray-600">Teams</th>
-                          <th className="text-left py-3 px-2 text-sm font-medium text-gray-600">Frequency</th>
-                          <th className="text-left py-3 px-2 text-sm font-medium text-gray-600">Last Sent</th>
-                          <th className="text-center py-3 px-2 text-sm font-medium text-gray-600">Actions</th>
+                  <div className="space-y-6">
+                    {(() => {
+                      // Group email members by category: Admins first, then by team
+                      const adminEmailMembers = emailMembers.filter(m => m.role === 'admin');
+                      const noTeamEmailMembers = emailMembers.filter(m => m.role !== 'admin' && (!m.teams || m.teams.length === 0));
+
+                      // Group non-admin members by their team
+                      const emailMembersByTeam: { [teamName: string]: typeof emailMembers } = {};
+                      teams.forEach(t => {
+                        emailMembersByTeam[t.name] = emailMembers.filter(m =>
+                          m.role !== 'admin' && m.teams?.some(team => team.name === t.name)
+                        );
+                      });
+
+                      // Render an email member row
+                      const renderEmailMemberRow = (m: EmailMember) => (
+                        <tr key={m.id} className="hover:bg-gray-50">
+                          <td className="py-3 px-2 sm:px-3">
+                            <div className="font-medium text-gray-900">{m.name}</div>
+                            <div className="text-xs text-gray-500 truncate">{m.email}</div>
+                          </td>
+                          <td className="py-3 px-2 sm:px-3 hidden sm:table-cell">
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              m.role === 'admin'
+                                ? 'bg-purple-100 text-purple-700'
+                                : m.role === 'lead'
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}>
+                              {m.role === 'admin' ? 'Admin' : m.role === 'lead' ? 'Lead' : 'Staff'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-2 sm:px-3">
+                            <select
+                              value={m.email_settings?.frequency || 'weekly'}
+                              onChange={(e) => handleUpdateEmailFrequency(m.id, e.target.value)}
+                              className="text-sm border border-gray-200 rounded px-2 py-1 bg-white w-full"
+                            >
+                              <option value="daily">Daily</option>
+                              <option value="weekly">Weekly</option>
+                              <option value="monthly">Monthly</option>
+                              <option value="none">None</option>
+                            </select>
+                          </td>
+                          <td className="py-3 px-2 sm:px-3 text-sm text-gray-500 hidden md:table-cell">
+                            {m.email_settings?.last_sent_at
+                              ? new Date(m.email_settings.last_sent_at).toLocaleDateString()
+                              : 'Never'}
+                          </td>
+                          <td className="py-3 px-2 sm:px-3 text-center">
+                            <button
+                              onClick={() => handleSendEmailNow(m.id)}
+                              disabled={sendingEmail === m.id}
+                              className="text-sm text-teal-600 hover:text-teal-800 font-medium disabled:opacity-50"
+                            >
+                              {sendingEmail === m.id ? 'Sending...' : 'Send Now'}
+                            </button>
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {emailMembers.map((m) => (
-                          <tr key={m.id} className="hover:bg-gray-50">
-                            <td className="py-3 px-2">
-                              <div className="font-medium text-gray-900">{m.name}</div>
-                              <div className="text-xs text-gray-500">{m.email}</div>
-                            </td>
-                            <td className="py-3 px-2">
-                              <span className={`text-xs px-2 py-1 rounded-full ${
-                                m.role === 'admin'
-                                  ? 'bg-purple-100 text-purple-700'
-                                  : m.role === 'lead'
-                                  ? 'bg-blue-100 text-blue-700'
-                                  : 'bg-gray-100 text-gray-700'
-                              }`}>
-                                {m.role === 'admin' ? 'Admin' : m.role === 'lead' ? 'Lead' : 'Staff'}
-                              </span>
-                            </td>
-                            <td className="py-3 px-2">
-                              <div className="flex flex-wrap gap-1">
-                                {m.role === 'admin' ? (
-                                  <span className="text-xs text-gray-500 italic">All teams</span>
-                                ) : m.teams && m.teams.length > 0 ? (
-                                  m.teams.map((t, i) => (
-                                    <span key={i} className="text-xs bg-gray-100 px-2 py-0.5 rounded">
-                                      {t?.name}
-                                    </span>
-                                  ))
-                                ) : (
-                                  <span className="text-xs text-gray-400 italic">No teams</span>
-                                )}
+                      );
+
+                      return (
+                        <>
+                          {/* Admins Section */}
+                          {adminEmailMembers.length > 0 && (
+                            <div className="border border-purple-200 rounded-lg overflow-hidden">
+                              <div className="bg-purple-50 px-4 py-2 border-b border-purple-200">
+                                <h3 className="text-sm font-semibold text-purple-700 flex items-center gap-2">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                  </svg>
+                                  Admins ({adminEmailMembers.length})
+                                  <span className="text-xs font-normal text-purple-500 ml-2">All teams</span>
+                                </h3>
                               </div>
-                            </td>
-                            <td className="py-3 px-2">
-                              <select
-                                value={m.email_settings?.frequency || 'weekly'}
-                                onChange={(e) => handleUpdateEmailFrequency(m.id, e.target.value)}
-                                className="text-sm border border-gray-200 rounded px-2 py-1 bg-white"
-                              >
-                                <option value="daily">Daily</option>
-                                <option value="weekly">Weekly</option>
-                                <option value="monthly">Monthly</option>
-                                <option value="none">None</option>
-                              </select>
-                            </td>
-                            <td className="py-3 px-2 text-sm text-gray-500">
-                              {m.email_settings?.last_sent_at
-                                ? new Date(m.email_settings.last_sent_at).toLocaleDateString()
-                                : 'Never'}
-                            </td>
-                            <td className="py-3 px-2 text-center">
-                              <button
-                                onClick={() => handleSendEmailNow(m.id)}
-                                disabled={sendingEmail === m.id}
-                                className="text-sm text-teal-600 hover:text-teal-800 font-medium disabled:opacity-50"
-                              >
-                                {sendingEmail === m.id ? 'Sending...' : 'Send Now'}
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                              <div className="overflow-x-auto">
+                                <table className="w-full">
+                                  <thead>
+                                    <tr className="border-b border-gray-200 bg-gray-50">
+                                      <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 whitespace-nowrap">Name</th>
+                                      <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden sm:table-cell whitespace-nowrap">Role</th>
+                                      <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 whitespace-nowrap">Frequency</th>
+                                      <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden md:table-cell whitespace-nowrap">Last Sent</th>
+                                      <th className="text-center py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 whitespace-nowrap">Actions</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-gray-100">
+                                    {adminEmailMembers.map(m => renderEmailMemberRow(m))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Team Sections */}
+                          {teams.map(team => {
+                            const teamEmailMembers = emailMembersByTeam[team.name] || [];
+                            if (teamEmailMembers.length === 0) return null;
+                            return (
+                              <div key={team.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                                <div className="bg-gradient-to-r from-teal-50 to-emerald-50 px-4 py-2 border-b border-gray-200">
+                                  <h3 className="text-sm font-semibold text-teal-700 flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                    </svg>
+                                    {team.name} ({teamEmailMembers.length})
+                                  </h3>
+                                </div>
+                                <div className="overflow-x-auto">
+                                  <table className="w-full">
+                                    <thead>
+                                      <tr className="border-b border-gray-200 bg-gray-50">
+                                        <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 whitespace-nowrap">Name</th>
+                                        <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden sm:table-cell whitespace-nowrap">Role</th>
+                                        <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 whitespace-nowrap">Frequency</th>
+                                        <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden md:table-cell whitespace-nowrap">Last Sent</th>
+                                        <th className="text-center py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 whitespace-nowrap">Actions</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                      {teamEmailMembers.map(m => renderEmailMemberRow(m))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            );
+                          })}
+
+                          {/* No Team Assigned */}
+                          {noTeamEmailMembers.length > 0 && (
+                            <div className="border border-amber-200 rounded-lg overflow-hidden">
+                              <div className="bg-amber-50 px-4 py-2 border-b border-amber-200">
+                                <h3 className="text-sm font-semibold text-amber-700 flex items-center gap-2">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                  </svg>
+                                  No Team Assigned ({noTeamEmailMembers.length})
+                                </h3>
+                              </div>
+                              <div className="overflow-x-auto">
+                                <table className="w-full">
+                                  <thead>
+                                    <tr className="border-b border-gray-200 bg-gray-50">
+                                      <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 whitespace-nowrap">Name</th>
+                                      <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden sm:table-cell whitespace-nowrap">Role</th>
+                                      <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 whitespace-nowrap">Frequency</th>
+                                      <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden md:table-cell whitespace-nowrap">Last Sent</th>
+                                      <th className="text-center py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 whitespace-nowrap">Actions</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-gray-100">
+                                    {noTeamEmailMembers.map(m => renderEmailMemberRow(m))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
 

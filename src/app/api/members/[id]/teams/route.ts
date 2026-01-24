@@ -71,7 +71,8 @@ export async function GET(
   }
 }
 
-// PUT - Update member's team assignments (supports multiple teams)
+// PUT - Update member's team assignments
+// Rule: Non-admins can only belong to 1 team (team isolation)
 export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -79,6 +80,25 @@ export async function PUT(
   try {
     const { id } = await context.params;
     const { teamIds } = await request.json() as { teamIds: string[] };
+
+    // Get member's role to enforce team limit
+    const { data: member, error: memberError } = await supabase
+      .from('members')
+      .select('role')
+      .eq('id', id)
+      .single();
+
+    if (memberError) {
+      return NextResponse.json({ error: 'Member not found' }, { status: 404 });
+    }
+
+    // Enforce 1-team rule for non-admins
+    if (member.role !== 'admin' && teamIds && teamIds.length > 1) {
+      return NextResponse.json(
+        { error: 'Non-admin members can only belong to one team' },
+        { status: 400 }
+      );
+    }
 
     // Delete existing team assignments
     await supabase

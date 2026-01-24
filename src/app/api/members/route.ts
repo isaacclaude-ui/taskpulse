@@ -52,13 +52,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const memberRole = role || 'user';
+    const teamsToAdd = teamIds || (teamId ? [teamId] : []);
+
+    // Enforce 1-team rule for non-admins
+    if (memberRole !== 'admin' && teamsToAdd.length > 1) {
+      return NextResponse.json(
+        { error: 'Non-admin members can only belong to one team' },
+        { status: 400 }
+      );
+    }
+
     // Email is optional - members can exist without login
     const { data: member, error } = await supabase
       .from('members')
       .insert({
         name,
         email: email ? email.toLowerCase() : null,
-        role: role || 'user',
+        role: memberRole,
         business_id: businessId,
       })
       .select()
@@ -74,8 +85,7 @@ export async function POST(request: NextRequest) {
       throw error;
     }
 
-    // Add to team(s) if specified
-    const teamsToAdd = teamIds || (teamId ? [teamId] : []);
+    // Add to team if specified (only 1 for non-admins)
     if (teamsToAdd.length > 0 && member) {
       const teamAssignments = teamsToAdd.map((tid: string) => ({
         member_id: member.id,

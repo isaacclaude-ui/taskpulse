@@ -46,27 +46,35 @@ export async function POST(request: NextRequest) {
       actualBusinessId = team?.business_id;
     }
 
-    // Helper function to get or create member
+    // Helper function to get or create member (TEAM-SCOPED)
+    // Rule: Each team is isolated - only match members within this team
     async function getOrCreateMember(name: string): Promise<string | null> {
       if (!name || !actualBusinessId) return null;
 
-      // Check if member exists
-      const { data: existingMember } = await supabase
-        .from('members')
-        .select('id')
-        .eq('business_id', actualBusinessId)
-        .ilike('name', name)
-        .single();
+      // Get member IDs that belong to THIS team only
+      const { data: teamMembers } = await supabase
+        .from('member_teams')
+        .select('member_id')
+        .eq('team_id', teamId);
 
-      if (existingMember) {
-        // Add to team if not already
-        await supabase
-          .from('member_teams')
-          .upsert({ member_id: existingMember.id, team_id: teamId }, { onConflict: 'member_id,team_id' });
-        return existingMember.id;
+      const teamMemberIds = teamMembers?.map(tm => tm.member_id) || [];
+
+      // Search for member by name ONLY within this team
+      if (teamMemberIds.length > 0) {
+        const { data: existingMember } = await supabase
+          .from('members')
+          .select('id')
+          .in('id', teamMemberIds)
+          .ilike('name', name)
+          .single();
+
+        if (existingMember) {
+          return existingMember.id;
+        }
       }
 
-      // Create new member
+      // Not found in this team - create a NEW member for this team
+      // (Even if same name exists in another team, they are different people)
       const { data: newMember, error: memberError } = await supabase
         .from('members')
         .insert({
