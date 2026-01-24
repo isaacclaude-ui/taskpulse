@@ -1104,11 +1104,11 @@ export default function AdminPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-2 sm:px-3 text-sm font-medium text-gray-600 min-w-[100px]">Name</th>
-                        <th className="text-left py-3 px-2 sm:px-3 text-sm font-medium text-gray-600 min-w-[120px]">Email</th>
-                        <th className="text-left py-3 px-2 sm:px-3 text-sm font-medium text-gray-600 hidden md:table-cell">Teams</th>
-                        <th className="text-left py-3 px-2 sm:px-3 text-sm font-medium text-gray-600 hidden sm:table-cell w-[80px]">Role</th>
-                        <th className="text-center py-3 px-2 sm:px-3 text-sm font-medium text-gray-600 w-[70px] sm:w-[100px]">Actions</th>
+                        <th className="text-left py-3 px-2 sm:px-3 text-sm font-medium text-gray-600 whitespace-nowrap">Name</th>
+                        <th className="text-left py-3 px-2 sm:px-3 text-sm font-medium text-gray-600 whitespace-nowrap">Email</th>
+                        <th className="text-left py-3 px-2 sm:px-3 text-sm font-medium text-gray-600 whitespace-nowrap hidden md:table-cell">Teams</th>
+                        <th className="text-left py-3 px-2 sm:px-3 text-sm font-medium text-gray-600 whitespace-nowrap hidden sm:table-cell">Role</th>
+                        <th className="text-center py-3 px-2 sm:px-3 text-sm font-medium text-gray-600 whitespace-nowrap">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
