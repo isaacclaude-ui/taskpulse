@@ -1129,12 +1129,17 @@ export default function AdminPage() {
                     const adminMembers = filteredMembers.filter(m => m.role === 'admin');
                     const unassignedMembers = filteredMembers.filter(m => m.role !== 'admin' && (!m.teamIds || m.teamIds.length === 0));
 
-                    // Group non-admin members by their team
+                    // Group non-admin members by their team, sorted by role (leads first)
                     const membersByTeam: { [teamId: string]: typeof filteredMembers } = {};
                     teams.forEach(t => {
-                      membersByTeam[t.id] = filteredMembers.filter(m =>
-                        m.role !== 'admin' && m.teamIds?.includes(t.id)
-                      );
+                      membersByTeam[t.id] = filteredMembers
+                        .filter(m => m.role !== 'admin' && m.teamIds?.includes(t.id))
+                        .sort((a, b) => {
+                          // Leads first, then staff (user)
+                          if (a.role === 'lead' && b.role !== 'lead') return -1;
+                          if (a.role !== 'lead' && b.role === 'lead') return 1;
+                          return a.name.localeCompare(b.name); // Then alphabetically
+                        });
                     });
 
                     // Render a member row - always 5 columns for alignment
@@ -1643,11 +1648,16 @@ export default function AdminPage() {
                       const noTeamEmailMembers = emailMembers.filter(m => m.role !== 'admin' && (!m.teams || m.teams.length === 0));
 
                       // Group non-admin members by their team
+                      // Group non-admin members by team, sorted by role (leads first)
                       const emailMembersByTeam: { [teamName: string]: typeof emailMembers } = {};
                       teams.forEach(t => {
-                        emailMembersByTeam[t.name] = emailMembers.filter(m =>
-                          m.role !== 'admin' && m.teams?.some(team => team.name === t.name)
-                        );
+                        emailMembersByTeam[t.name] = emailMembers
+                          .filter(m => m.role !== 'admin' && m.teams?.some(team => team.name === t.name))
+                          .sort((a, b) => {
+                            if (a.role === 'lead' && b.role !== 'lead') return -1;
+                            if (a.role !== 'lead' && b.role === 'lead') return 1;
+                            return a.name.localeCompare(b.name);
+                          });
                       });
 
                       // Render an email member row - consistent 5 columns
