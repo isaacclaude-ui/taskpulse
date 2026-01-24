@@ -53,6 +53,9 @@ export default function DashboardPage() {
   });
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
+  // User menu dropdown state (for mobile support)
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
   // Pending users count (for admin badge)
   const [pendingCount, setPendingCount] = useState(0);
 
@@ -500,16 +503,24 @@ export default function DashboardPage() {
               </button>
 
               {/* User dropdown with team switch and logout */}
-              <div className="relative group">
-                <button className="flex items-center justify-center text-sm text-white/70 p-2 rounded-lg hover:bg-white/10 transition-colors" title="Menu">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center justify-center text-sm text-white/70 p-2 rounded-lg hover:bg-white/10 transition-colors"
+                  title="Menu"
+                >
+                  <svg className={`w-4 h-4 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
-                <div
-                  className="absolute right-0 mt-2 bg-white rounded-lg shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-visible"
-                  style={{ minWidth: '280px' }}
-                >
+                {showUserMenu && (
+                  <>
+                    {/* Backdrop to close on outside click */}
+                    <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
+                    <div
+                      className="absolute right-0 mt-2 bg-white rounded-lg shadow-lg py-2 z-50 overflow-visible"
+                      style={{ minWidth: '280px' }}
+                    >
                   {/* Team switcher section */}
                   {availableTeams.length > 1 && (
                     <>
@@ -517,7 +528,7 @@ export default function DashboardPage() {
                       {availableTeams.map((t) => (
                         <button
                           key={t.id}
-                          onClick={() => handleTeamSwitch(t)}
+                          onClick={() => { handleTeamSwitch(t); setShowUserMenu(false); }}
                           className={`block w-full px-4 py-2 text-left text-sm ${
                             t.id === teamId
                               ? 'text-teal-600 bg-teal-50 font-medium'
@@ -532,7 +543,7 @@ export default function DashboardPage() {
                     </>
                   )}
                   <button
-                    onClick={handleLogout}
+                    onClick={() => { setShowUserMenu(false); handleLogout(); }}
                     className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -540,7 +551,9 @@ export default function DashboardPage() {
                     </svg>
                     Sign Out
                   </button>
-                </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

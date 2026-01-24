@@ -1101,14 +1101,14 @@ export default function AdminPage() {
 
                 {/* Members table */}
                 <div className="mt-4 overflow-x-auto">
-                  <table className="w-full table-fixed">
+                  <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-600 w-[140px]">Name</th>
-                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Email</th>
-                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-600 w-[200px]">Teams</th>
-                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-600 w-[100px]">Role</th>
-                        <th className="text-center py-3 px-3 text-sm font-medium text-gray-600 w-[100px]">Actions</th>
+                        <th className="text-left py-3 px-2 sm:px-3 text-sm font-medium text-gray-600 min-w-[100px]">Name</th>
+                        <th className="text-left py-3 px-2 sm:px-3 text-sm font-medium text-gray-600 min-w-[120px]">Email</th>
+                        <th className="text-left py-3 px-2 sm:px-3 text-sm font-medium text-gray-600 hidden md:table-cell">Teams</th>
+                        <th className="text-left py-3 px-2 sm:px-3 text-sm font-medium text-gray-600 hidden sm:table-cell w-[80px]">Role</th>
+                        <th className="text-center py-3 px-2 sm:px-3 text-sm font-medium text-gray-600 w-[70px] sm:w-[100px]">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -1123,7 +1123,7 @@ export default function AdminPage() {
                           return (
                         <tr key={m.id} className="hover:bg-gray-50">
                           {/* Name column */}
-                          <td className="py-3 px-3">
+                          <td className="py-3 px-2 sm:px-3">
                             {editingMemberId === m.id ? (
                               <div className="flex items-center gap-1">
                                 <input
@@ -1162,7 +1162,7 @@ export default function AdminPage() {
                             )}
                           </td>
                           {/* Email column - editable */}
-                          <td className="py-3 px-3">
+                          <td className="py-3 px-2 sm:px-3">
                             {editingMemberEmailId === m.id ? (
                               <div className="flex items-center gap-1">
                                 <input
@@ -1196,8 +1196,8 @@ export default function AdminPage() {
                               </button>
                             )}
                           </td>
-                          {/* Teams column - dropdown selector, 1 line */}
-                          <td className="py-3 px-3">
+                          {/* Teams column - dropdown selector, hidden on mobile */}
+                          <td className="py-3 px-2 sm:px-3 hidden md:table-cell">
                             <div className="relative group">
                               <div className="flex flex-nowrap gap-1 min-h-[24px] overflow-hidden">
                                 {memberTeams.length > 0 ? (
@@ -1240,12 +1240,12 @@ export default function AdminPage() {
                               </div>
                             </div>
                           </td>
-                          {/* Role column */}
-                          <td className="py-3 px-3">
+                          {/* Role column - hidden on small mobile */}
+                          <td className="py-3 px-2 sm:px-3 hidden sm:table-cell">
                             <select
                               value={m.role}
                               onChange={(e) => handleUpdateMemberRole(m.id, e.target.value)}
-                              className="text-xs border border-gray-200 rounded px-2 py-1 bg-white w-full"
+                              className="text-xs border border-gray-200 rounded px-1 sm:px-2 py-1 bg-white w-full"
                             >
                               <option value="user">Staff</option>
                               <option value="lead">Lead</option>
@@ -1253,7 +1253,7 @@ export default function AdminPage() {
                             </select>
                           </td>
                           {/* Actions column - fixed width for alignment */}
-                          <td className="py-3 px-3">
+                          <td className="py-3 px-1 sm:px-3">
                             <div className="flex items-center justify-center gap-0.5">
                               {/* Email slot - always reserve space */}
                               <div className="w-6 h-6 flex items-center justify-center">
