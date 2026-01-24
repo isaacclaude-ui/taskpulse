@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import { useNav } from '@/context/NavContext';
@@ -1115,8 +1115,8 @@ export default function AdminPage() {
                   </span>
                 </div>
 
-                {/* Members table - grouped by category */}
-                <div className="mt-4 space-y-6">
+                {/* Members table - grouped by category with consistent columns */}
+                <div className="mt-4 border border-gray-200 rounded-lg overflow-hidden">
                   {(() => {
                     // Filter members based on team filter
                     const filteredMembers = members.filter(m => {
@@ -1137,11 +1137,11 @@ export default function AdminPage() {
                       );
                     });
 
-                    // Render a member row
-                    const renderMemberRow = (m: MemberWithTeams, showTeamSelector: boolean = false) => (
+                    // Render a member row - always 5 columns for alignment
+                    const renderMemberRow = (m: MemberWithTeams, teamColumn: 'all' | 'selector' | string) => (
                       <tr key={m.id} className="hover:bg-gray-50">
-                        {/* Name column */}
-                        <td className="py-3 px-2 sm:px-3">
+                        {/* Name column - 25% */}
+                        <td className="py-3 px-2 sm:px-3 w-[25%]">
                           {editingMemberId === m.id ? (
                             <div className="flex items-center gap-1">
                               <input
@@ -1179,8 +1179,8 @@ export default function AdminPage() {
                             </div>
                           )}
                         </td>
-                        {/* Email column */}
-                        <td className="py-3 px-2 sm:px-3">
+                        {/* Email column - 30% */}
+                        <td className="py-3 px-2 sm:px-3 w-[30%]">
                           {editingMemberEmailId === m.id ? (
                             <div className="flex items-center gap-1">
                               <input
@@ -1214,8 +1214,8 @@ export default function AdminPage() {
                             </button>
                           )}
                         </td>
-                        {/* Role column - hidden on small mobile */}
-                        <td className="py-3 px-2 sm:px-3 hidden sm:table-cell">
+                        {/* Role column - 12% */}
+                        <td className="py-3 px-2 sm:px-3 hidden sm:table-cell w-[12%]">
                           <select
                             value={m.role}
                             onChange={(e) => handleUpdateMemberRole(m.id, e.target.value)}
@@ -1226,27 +1226,27 @@ export default function AdminPage() {
                             <option value="admin">Admin</option>
                           </select>
                         </td>
-                        {/* Team selector - only for admins or unassigned (hidden on mobile) */}
-                        {showTeamSelector && (
-                          <td className="py-3 px-2 sm:px-3 hidden md:table-cell">
-                            {m.role === 'admin' ? (
-                              <span className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">All Teams</span>
-                            ) : (
-                              <select
-                                value={m.teamIds?.[0] || ''}
-                                onChange={(e) => handleUpdateMemberTeams(m.id, e.target.value ? [e.target.value] : [])}
-                                className="text-xs border border-gray-200 rounded px-2 py-1 bg-white w-full"
-                              >
-                                <option value="">No Team</option>
-                                {teams.map(t => (
-                                  <option key={t.id} value={t.id}>{t.name}</option>
-                                ))}
-                              </select>
-                            )}
-                          </td>
-                        )}
-                        {/* Actions column */}
-                        <td className="py-3 px-1 sm:px-3">
+                        {/* Team/Access column - 18% - always present for alignment */}
+                        <td className="py-3 px-2 sm:px-3 hidden md:table-cell w-[18%]">
+                          {teamColumn === 'all' ? (
+                            <span className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">All Teams</span>
+                          ) : teamColumn === 'selector' ? (
+                            <select
+                              value={m.teamIds?.[0] || ''}
+                              onChange={(e) => handleUpdateMemberTeams(m.id, e.target.value ? [e.target.value] : [])}
+                              className="text-xs border border-gray-200 rounded px-2 py-1 bg-white w-full"
+                            >
+                              <option value="">No Team</option>
+                              {teams.map(t => (
+                                <option key={t.id} value={t.id}>{t.name}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span className="text-xs text-teal-600">✓</span>
+                          )}
+                        </td>
+                        {/* Actions column - 15% */}
+                        <td className="py-3 px-1 sm:px-3 w-[15%]">
                           <div className="flex items-center justify-center gap-0.5">
                             <div className="w-6 h-6 flex items-center justify-center">
                               {m.email ? (
@@ -1293,100 +1293,82 @@ export default function AdminPage() {
                     );
 
                     return (
-                      <>
-                        {/* Admins Section */}
-                        {adminMembers.length > 0 && (
-                          <div className="border border-purple-200 rounded-lg overflow-hidden">
-                            <div className="bg-purple-50 px-4 py-2 border-b border-purple-200">
-                              <h3 className="text-sm font-semibold text-purple-700 flex items-center gap-2">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                                </svg>
-                                Admins ({adminMembers.length})
-                              </h3>
-                            </div>
-                            <table className="w-full">
-                              <thead>
-                                <tr className="border-b border-gray-200 bg-gray-50">
-                                  <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500">Name</th>
-                                  <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500">Email</th>
-                                  <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden sm:table-cell">Role</th>
-                                  <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden md:table-cell">Access</th>
-                                  <th className="text-center py-2 px-2 sm:px-3 text-xs font-medium text-gray-500">Actions</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-gray-100">
-                                {adminMembers.map(m => renderMemberRow(m, true))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
+                      <table className="w-full table-fixed">
+                        {/* Single header row for all sections */}
+                        <thead>
+                          <tr className="border-b border-gray-200 bg-gray-100">
+                            <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 w-[25%]">Name</th>
+                            <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 w-[30%]">Email</th>
+                            <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden sm:table-cell w-[12%]">Role</th>
+                            <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden md:table-cell w-[18%]">Team</th>
+                            <th className="text-center py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 w-[15%]">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {/* Admins Section */}
+                          {adminMembers.length > 0 && (
+                            <>
+                              <tr className="bg-purple-50">
+                                <td colSpan={5} className="py-2 px-3">
+                                  <div className="text-sm font-semibold text-purple-700 flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                    </svg>
+                                    Admins ({adminMembers.length})
+                                  </div>
+                                </td>
+                              </tr>
+                              {adminMembers.map(m => renderMemberRow(m, 'all'))}
+                            </>
+                          )}
 
-                        {/* Team Sections */}
-                        {teams.map(team => {
-                          const teamMembers = membersByTeam[team.id] || [];
-                          if (teamMembers.length === 0 && memberTeamFilter !== 'all') return null;
-                          return (
-                            <div key={team.id} className="border border-gray-200 rounded-lg overflow-hidden">
-                              <div className="bg-gradient-to-r from-teal-50 to-emerald-50 px-4 py-2 border-b border-gray-200">
-                                <h3 className="text-sm font-semibold text-teal-700 flex items-center gap-2">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                  </svg>
-                                  {team.name} ({teamMembers.length})
-                                </h3>
-                              </div>
-                              {teamMembers.length > 0 ? (
-                                <table className="w-full">
-                                  <thead>
-                                    <tr className="border-b border-gray-200 bg-gray-50">
-                                      <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500">Name</th>
-                                      <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500">Email</th>
-                                      <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden sm:table-cell">Role</th>
-                                      <th className="text-center py-2 px-2 sm:px-3 text-xs font-medium text-gray-500">Actions</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="divide-y divide-gray-100">
-                                    {teamMembers.map(m => renderMemberRow(m, false))}
-                                  </tbody>
-                                </table>
-                              ) : (
-                                <div className="px-4 py-6 text-center text-sm text-gray-400">
-                                  No members in this team
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-
-                        {/* Unassigned Members */}
-                        {unassignedMembers.length > 0 && (
-                          <div className="border border-amber-200 rounded-lg overflow-hidden">
-                            <div className="bg-amber-50 px-4 py-2 border-b border-amber-200">
-                              <h3 className="text-sm font-semibold text-amber-700 flex items-center gap-2">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                </svg>
-                                No Team Assigned ({unassignedMembers.length})
-                              </h3>
-                            </div>
-                            <table className="w-full">
-                              <thead>
-                                <tr className="border-b border-gray-200 bg-gray-50">
-                                  <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500">Name</th>
-                                  <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500">Email</th>
-                                  <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden sm:table-cell">Role</th>
-                                  <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden md:table-cell">Assign To</th>
-                                  <th className="text-center py-2 px-2 sm:px-3 text-xs font-medium text-gray-500">Actions</th>
+                          {/* Team Sections */}
+                          {teams.map(team => {
+                            const teamMembers = membersByTeam[team.id] || [];
+                            if (teamMembers.length === 0 && memberTeamFilter !== 'all') return null;
+                            return (
+                              <React.Fragment key={team.id}>
+                                <tr className="bg-gradient-to-r from-teal-50 to-emerald-50">
+                                  <td colSpan={5} className="py-2 px-3">
+                                    <div className="text-sm font-semibold text-teal-700 flex items-center gap-2">
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                      </svg>
+                                      {team.name} ({teamMembers.length})
+                                    </div>
+                                  </td>
                                 </tr>
-                              </thead>
-                              <tbody className="divide-y divide-gray-100">
-                                {unassignedMembers.map(m => renderMemberRow(m, true))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
-                      </>
+                                {teamMembers.length > 0 ? (
+                                  teamMembers.map(m => renderMemberRow(m, team.name))
+                                ) : (
+                                  <tr>
+                                    <td colSpan={5} className="py-4 text-center text-sm text-gray-400">
+                                      No members in this team
+                                    </td>
+                                  </tr>
+                                )}
+                              </React.Fragment>
+                            );
+                          })}
+
+                          {/* Unassigned Members */}
+                          {unassignedMembers.length > 0 && (
+                            <>
+                              <tr className="bg-amber-50">
+                                <td colSpan={5} className="py-2 px-3">
+                                  <div className="text-sm font-semibold text-amber-700 flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                    No Team Assigned ({unassignedMembers.length})
+                                  </div>
+                                </td>
+                              </tr>
+                              {unassignedMembers.map(m => renderMemberRow(m, 'selector'))}
+                            </>
+                          )}
+                        </tbody>
+                      </table>
                     );
                   })()}
                 </div>
@@ -1654,7 +1636,7 @@ export default function AdminPage() {
                     No members with email found
                   </p>
                 ) : (
-                  <div className="space-y-6">
+                  <div className="border border-gray-200 rounded-lg overflow-hidden">
                     {(() => {
                       // Group email members by category: Admins first, then by team
                       const adminEmailMembers = emailMembers.filter(m => m.role === 'admin');
@@ -1668,14 +1650,14 @@ export default function AdminPage() {
                         );
                       });
 
-                      // Render an email member row
+                      // Render an email member row - consistent 5 columns
                       const renderEmailMemberRow = (m: EmailMember) => (
                         <tr key={m.id} className="hover:bg-gray-50">
-                          <td className="py-3 px-2 sm:px-3">
+                          <td className="py-3 px-2 sm:px-3 w-[30%]">
                             <div className="font-medium text-gray-900">{m.name}</div>
                             <div className="text-xs text-gray-500 truncate">{m.email}</div>
                           </td>
-                          <td className="py-3 px-2 sm:px-3 hidden sm:table-cell">
+                          <td className="py-3 px-2 sm:px-3 hidden sm:table-cell w-[15%]">
                             <span className={`text-xs px-2 py-1 rounded-full ${
                               m.role === 'admin'
                                 ? 'bg-purple-100 text-purple-700'
@@ -1686,7 +1668,7 @@ export default function AdminPage() {
                               {m.role === 'admin' ? 'Admin' : m.role === 'lead' ? 'Lead' : 'Staff'}
                             </span>
                           </td>
-                          <td className="py-3 px-2 sm:px-3">
+                          <td className="py-3 px-2 sm:px-3 w-[20%]">
                             <select
                               value={m.email_settings?.frequency || 'weekly'}
                               onChange={(e) => handleUpdateEmailFrequency(m.id, e.target.value)}
@@ -1698,12 +1680,12 @@ export default function AdminPage() {
                               <option value="none">None</option>
                             </select>
                           </td>
-                          <td className="py-3 px-2 sm:px-3 text-sm text-gray-500 hidden md:table-cell">
+                          <td className="py-3 px-2 sm:px-3 text-sm text-gray-500 hidden md:table-cell w-[20%]">
                             {m.email_settings?.last_sent_at
                               ? new Date(m.email_settings.last_sent_at).toLocaleDateString()
                               : 'Never'}
                           </td>
-                          <td className="py-3 px-2 sm:px-3 text-center">
+                          <td className="py-3 px-2 sm:px-3 text-center w-[15%]">
                             <button
                               onClick={() => handleSendEmailNow(m.id)}
                               disabled={sendingEmail === m.id}
@@ -1716,102 +1698,75 @@ export default function AdminPage() {
                       );
 
                       return (
-                        <>
-                          {/* Admins Section */}
-                          {adminEmailMembers.length > 0 && (
-                            <div className="border border-purple-200 rounded-lg overflow-hidden">
-                              <div className="bg-purple-50 px-4 py-2 border-b border-purple-200">
-                                <h3 className="text-sm font-semibold text-purple-700 flex items-center gap-2">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                                  </svg>
-                                  Admins ({adminEmailMembers.length})
-                                  <span className="text-xs font-normal text-purple-500 ml-2">All teams</span>
-                                </h3>
-                              </div>
-                              <div className="overflow-x-auto">
-                                <table className="w-full">
-                                  <thead>
-                                    <tr className="border-b border-gray-200 bg-gray-50">
-                                      <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 whitespace-nowrap">Name</th>
-                                      <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden sm:table-cell whitespace-nowrap">Role</th>
-                                      <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 whitespace-nowrap">Frequency</th>
-                                      <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden md:table-cell whitespace-nowrap">Last Sent</th>
-                                      <th className="text-center py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 whitespace-nowrap">Actions</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="divide-y divide-gray-100">
-                                    {adminEmailMembers.map(m => renderEmailMemberRow(m))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
-                          )}
+                        <table className="w-full table-fixed">
+                          {/* Single header row */}
+                          <thead>
+                            <tr className="border-b border-gray-200 bg-gray-100">
+                              <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 w-[30%]">Name</th>
+                              <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden sm:table-cell w-[15%]">Role</th>
+                              <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 w-[20%]">Frequency</th>
+                              <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden md:table-cell w-[20%]">Last Sent</th>
+                              <th className="text-center py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 w-[15%]">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {/* Admins Section */}
+                            {adminEmailMembers.length > 0 && (
+                              <>
+                                <tr className="bg-purple-50">
+                                  <td colSpan={5} className="py-2 px-3">
+                                    <div className="text-sm font-semibold text-purple-700 flex items-center gap-2">
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                      </svg>
+                                      Admins ({adminEmailMembers.length})
+                                      <span className="text-xs font-normal text-purple-500">— All teams</span>
+                                    </div>
+                                  </td>
+                                </tr>
+                                {adminEmailMembers.map(m => renderEmailMemberRow(m))}
+                              </>
+                            )}
 
-                          {/* Team Sections */}
-                          {teams.map(team => {
-                            const teamEmailMembers = emailMembersByTeam[team.name] || [];
-                            if (teamEmailMembers.length === 0) return null;
-                            return (
-                              <div key={team.id} className="border border-gray-200 rounded-lg overflow-hidden">
-                                <div className="bg-gradient-to-r from-teal-50 to-emerald-50 px-4 py-2 border-b border-gray-200">
-                                  <h3 className="text-sm font-semibold text-teal-700 flex items-center gap-2">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                    </svg>
-                                    {team.name} ({teamEmailMembers.length})
-                                  </h3>
-                                </div>
-                                <div className="overflow-x-auto">
-                                  <table className="w-full">
-                                    <thead>
-                                      <tr className="border-b border-gray-200 bg-gray-50">
-                                        <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 whitespace-nowrap">Name</th>
-                                        <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden sm:table-cell whitespace-nowrap">Role</th>
-                                        <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 whitespace-nowrap">Frequency</th>
-                                        <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden md:table-cell whitespace-nowrap">Last Sent</th>
-                                        <th className="text-center py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 whitespace-nowrap">Actions</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                      {teamEmailMembers.map(m => renderEmailMemberRow(m))}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              </div>
-                            );
-                          })}
+                            {/* Team Sections */}
+                            {teams.map(team => {
+                              const teamEmailMembers = emailMembersByTeam[team.name] || [];
+                              if (teamEmailMembers.length === 0) return null;
+                              return (
+                                <React.Fragment key={team.id}>
+                                  <tr className="bg-gradient-to-r from-teal-50 to-emerald-50">
+                                    <td colSpan={5} className="py-2 px-3">
+                                      <div className="text-sm font-semibold text-teal-700 flex items-center gap-2">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                        </svg>
+                                        {team.name} ({teamEmailMembers.length})
+                                      </div>
+                                    </td>
+                                  </tr>
+                                  {teamEmailMembers.map(m => renderEmailMemberRow(m))}
+                                </React.Fragment>
+                              );
+                            })}
 
-                          {/* No Team Assigned */}
-                          {noTeamEmailMembers.length > 0 && (
-                            <div className="border border-amber-200 rounded-lg overflow-hidden">
-                              <div className="bg-amber-50 px-4 py-2 border-b border-amber-200">
-                                <h3 className="text-sm font-semibold text-amber-700 flex items-center gap-2">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                  </svg>
-                                  No Team Assigned ({noTeamEmailMembers.length})
-                                </h3>
-                              </div>
-                              <div className="overflow-x-auto">
-                                <table className="w-full">
-                                  <thead>
-                                    <tr className="border-b border-gray-200 bg-gray-50">
-                                      <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 whitespace-nowrap">Name</th>
-                                      <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden sm:table-cell whitespace-nowrap">Role</th>
-                                      <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 whitespace-nowrap">Frequency</th>
-                                      <th className="text-left py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 hidden md:table-cell whitespace-nowrap">Last Sent</th>
-                                      <th className="text-center py-2 px-2 sm:px-3 text-xs font-medium text-gray-500 whitespace-nowrap">Actions</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="divide-y divide-gray-100">
-                                    {noTeamEmailMembers.map(m => renderEmailMemberRow(m))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
-                          )}
-                        </>
+                            {/* No Team Assigned */}
+                            {noTeamEmailMembers.length > 0 && (
+                              <>
+                                <tr className="bg-amber-50">
+                                  <td colSpan={5} className="py-2 px-3">
+                                    <div className="text-sm font-semibold text-amber-700 flex items-center gap-2">
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                      </svg>
+                                      No Team Assigned ({noTeamEmailMembers.length})
+                                    </div>
+                                  </td>
+                                </tr>
+                                {noTeamEmailMembers.map(m => renderEmailMemberRow(m))}
+                              </>
+                            )}
+                          </tbody>
+                        </table>
                       );
                     })()}
                   </div>
