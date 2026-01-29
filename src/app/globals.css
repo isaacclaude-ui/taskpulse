@@ -236,6 +236,8 @@ html, body {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   font-size: 14px;
+  color: #171717;
+  background-color: #ffffff;
   transition: all 0.2s;
 }
 
