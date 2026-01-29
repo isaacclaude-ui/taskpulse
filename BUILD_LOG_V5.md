@@ -269,4 +269,20 @@ Use BUILD_LOG_V5.md for detailed implementation patterns.
 
 ---
 
-**Shipped:** January 24, 2026
+## v5.1 Patch — Input Text Visibility Fix
+
+**Issue:** All `.input-field` elements (AI chat textarea, admin forms, etc.) inherited text color from `body { color: var(--foreground) }`. On devices with dark mode, `--foreground` becomes `#ededed` (near-white), making text invisible on white inputs.
+
+**Fix** (`/src/app/globals.css`):
+```css
+.input-field {
+  color: #171717;
+  background-color: #ffffff;
+}
+```
+
+**Lesson:** Always set explicit `color` and `background-color` on form inputs. Never rely on CSS variable inheritance for elements with fixed backgrounds.
+
+---
+
+**Shipped:** v5.0 January 24, 2026 | v5.1 January 29, 2026
