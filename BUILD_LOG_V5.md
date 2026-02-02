@@ -285,4 +285,92 @@ Use BUILD_LOG_V5.md for detailed implementation patterns.
 
 ---
 
-**Shipped:** v5.0 January 24, 2026 | v5.1 January 29, 2026
+## v5.2 Patch — Onboarding Flow Fix
+
+**Issue:** New users invited via admin panel couldn't get started: (1) invite email linked to generic `/login` with no context, (2) no auth callback route to handle Supabase email confirmation tokens, (3) users didn't know to sign up or which email to use.
+
+### Auth Callback Route (`/src/app/auth/callback/page.tsx`) — NEW
+
+Handles Supabase email confirmation and password reset token processing.
+
+```typescript
+// Let Supabase client process the URL tokens automatically
+const { data: { session }, error } = await supabase.auth.getSession();
+
+if (type === 'recovery') {
+  // Password reset flow → redirect to reset-password page
+  router.push('/reset-password');
+} else if (session) {
+  // Authenticated → redirect to dashboard
+  router.push('/select-business');
+} else {
+  // Email confirmation → retry session, then redirect to login
+  setTimeout(async () => {
+    const { data: { session: retrySession } } = await supabase.auth.getSession();
+    if (retrySession) router.push('/select-business');
+    else router.push('/login');
+  }, 1000);
+}
+```
+
+### Invite Email Update (`/src/app/api/send-invite/route.ts`)
+
+- Link changed from `${appUrl}/login` to `${appUrl}/login?invite=true&email=${encodeURIComponent(email)}`
+- Button text: "Create Your Account" → "Set Your Password"
+- Copy: "Click below to create your account" → "Click below to set your password... Your email is already registered"
+
+### Login Page Invite Detection (`/src/app/login/page.tsx`)
+
+```typescript
+const searchParams = useSearchParams();
+const isInvite = searchParams.get('invite') === 'true';
+const inviteEmail = searchParams.get('email') || '';
+
+const [mode, setMode] = useState<AuthMode>(isInvite ? 'signup' : 'signin');
+const [email, setEmail] = useState(inviteEmail);
+```
+
+Plus a welcome banner for invited users:
+```tsx
+{isInvite && mode === 'signup' && (
+  <div className="bg-teal-50 border border-teal-200 text-teal-800 p-3 rounded-lg text-sm mb-4">
+    <strong>Welcome!</strong> You've been invited to Task Pulse. Choose a password below...
+  </div>
+)}
+```
+
+### Auth Redirects (`/src/lib/auth.ts`)
+
+Both `signUp` and `resetPassword` now redirect through `/auth/callback`:
+
+```typescript
+export async function signUp(email: string, password: string) {
+  const { data, error } = await supabase.auth.signUp({
+    email, password,
+    options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+  });
+  return { data, error };
+}
+
+export async function resetPassword(email: string) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/auth/callback`,
+  });
+  return { error };
+}
+```
+
+### Files Changed in v5.2
+
+| File | Changes |
+|------|---------|
+| `src/app/auth/callback/page.tsx` | **NEW** — Auth callback handler |
+| `src/app/api/send-invite/route.ts` | Invite link with params, updated copy |
+| `src/app/login/page.tsx` | Invite param detection, auto Sign Up, welcome banner |
+| `src/lib/auth.ts` | Auth redirects through `/auth/callback` |
+
+**Lesson:** Invite flows need end-to-end ownership — the email, the link, the landing page, and the token handler must all be connected. A generic link to `/login` creates a dead end for new users.
+
+---
+
+**Shipped:** v5.0 January 24, 2026 | v5.1 January 29, 2026 | v5.2 February 2, 2026
