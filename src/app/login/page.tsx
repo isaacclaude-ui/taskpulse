@@ -1,15 +1,19 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn, signUp, resetPassword, isEmailAllowed, requestAccess, getBusinessByJoinCode } from '@/lib/auth';
 
 type AuthMode = 'signin' | 'signup' | 'reset' | 'request';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [mode, setMode] = useState<AuthMode>('signin');
-  const [email, setEmail] = useState('');
+  const searchParams = useSearchParams();
+  const isInvite = searchParams.get('invite') === 'true';
+  const inviteEmail = searchParams.get('email') || '';
+
+  const [mode, setMode] = useState<AuthMode>(isInvite ? 'signup' : 'signin');
+  const [email, setEmail] = useState(inviteEmail);
   const [password, setPassword] = useState('');
   const [businessCode, setBusinessCode] = useState('');
   const [businessName, setBusinessName] = useState('');
@@ -148,6 +152,13 @@ export default function LoginPage() {
             Request Access
           </button>
         </div>
+
+        {/* Invite welcome banner */}
+        {isInvite && mode === 'signup' && (
+          <div className="bg-teal-50 border border-teal-200 text-teal-800 p-3 rounded-lg text-sm mb-4">
+            <strong>Welcome!</strong> You&apos;ve been invited to Task Pulse. Choose a password below to complete your account setup.
+          </div>
+        )}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">

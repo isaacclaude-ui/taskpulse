@@ -39,18 +39,18 @@ export async function POST(request: NextRequest) {
             </p>
 
             <p style="margin: 0 0 24px 0; color: #475569; font-size: 16px; line-height: 1.6;">
-              Click the button below to create your account and get started.
+              Click the button below to set your password and get started. Your email is already registered — you just need to choose a password.
             </p>
 
             <!-- CTA Button -->
             <div style="text-align: center; margin: 32px 0;">
-              <a href="${appUrl}/login" style="display: inline-block; background-color: #0d9488; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
-                Create Your Account
+              <a href="${appUrl}/login?invite=true&email=${encodeURIComponent(email)}" style="display: inline-block; background-color: #0d9488; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
+                Set Your Password
               </a>
             </div>
 
             <p style="margin: 0; color: #94a3b8; font-size: 14px; text-align: center;">
-              Use this email address to sign up: <strong style="color: #475569;">${email}</strong>
+              Signing up as: <strong style="color: #475569;">${email}</strong>
             </p>
           </div>
 
