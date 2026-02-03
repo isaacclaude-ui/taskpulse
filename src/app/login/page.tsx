@@ -61,11 +61,14 @@ export default function LoginPage() {
           return;
         }
 
-        const { error } = await signUp(email, password);
+        const { data, error } = await signUp(email, password);
         if (error) {
           setError(error.message);
+        } else if (data?.session) {
+          // Auto-confirmed — redirect straight to dashboard
+          router.push('/select-business');
         } else {
-          setSuccess('Check your email to confirm your account.');
+          setSuccess('Account created! You can now sign in.');
         }
       } else if (mode === 'reset') {
         const { error } = await resetPassword(email);

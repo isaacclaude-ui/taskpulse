@@ -11,13 +11,12 @@ export async function signIn(email: string, password: string) {
 }
 
 // Sign up with email and password
+// Email auto-confirmed via Supabase config (mailer_autoconfirm: true)
+// No confirmation email sent — session returned immediately
 export async function signUp(email: string, password: string) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: {
-      emailRedirectTo: `${window.location.origin}/auth/callback`,
-    },
   });
   return { data, error };
 }
